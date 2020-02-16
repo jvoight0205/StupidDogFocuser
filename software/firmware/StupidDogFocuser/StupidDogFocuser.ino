@@ -296,7 +296,7 @@ void initializeStepper() {
   pinMode(HALF_STEP_PIN, OUTPUT);
   digitalWrite(HALF_STEP_PIN, isHalfStep ? HIGH : LOW);
   pinMode(ENABLE_PIN, OUTPUT);
-  digitalWrite(ENABLE_PIN, HIGH);
+  digitalWrite(ENABLE_PIN, LOW);
 }
 
 /*
