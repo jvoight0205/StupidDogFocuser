@@ -32,7 +32,7 @@
 #define DHTTYPE DHT11
 //#define DHTTYPE DHT22
 
-#define DEBUG
+//#define DEBUG
 
 int16_t encoderPosition = 0; // Set to be incorrect on purpose so that it gets updated in setup.
 uint16_t motorPosition = 0x7FFF; // midpoint of 0xFFFF
@@ -51,7 +51,7 @@ DHT dht(DHT_PIN, DHTTYPE);
 void setup() {
   Serial.begin(9600);
   while (!Serial); // Wait for Serial initialization. Should be very little time.
-  respond(formatUDecimal(VERSION));
+  respond(formatVersion(VERSION));
   initializeDHT();
   initializeStepper();
   initializeEncoder();
