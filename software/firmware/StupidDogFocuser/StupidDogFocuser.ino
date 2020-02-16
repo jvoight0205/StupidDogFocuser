@@ -32,8 +32,6 @@
 #define DHTTYPE DHT11
 //#define DHTTYPE DHT22
 
-#define DEBUG
-
 int16_t encoderPosition = 0; // Set to be incorrect on purpose so that it gets updated in setup.
 uint16_t motorPosition = 0x7FFF; // midpoint of 0xFFFF
 uint16_t newMotorPosition = motorPosition; // for two-stage moves
@@ -58,14 +56,14 @@ void setup() {
 }
 
 /*
- * Main loop. We need to call stepper.run() as frequently as possible so the motor doesn't stutter.
- * As such, we call stepper.run() between each functional block of code. We don't call it at the very
- * end because the loop is just about to be called again and stepper.run() is the first line.
- * 
- * In this loop, we determine if any serial commands have come in. If so, interpret them. Then we determine
- * if any changes have been made to the focus knob. If so, handle them. And, lastly, update the motor
- * position variable so that it remains up-to-date at all times.
- */
+   Main loop. We need to call stepper.run() as frequently as possible so the motor doesn't stutter.
+   As such, we call stepper.run() between each functional block of code. We don't call it at the very
+   end because the loop is just about to be called again and stepper.run() is the first line.
+
+   In this loop, we determine if any serial commands have come in. If so, interpret them. Then we determine
+   if any changes have been made to the focus knob. If so, handle them. And, lastly, update the motor
+   position variable so that it remains up-to-date at all times.
+*/
 void loop() {
   stepper.run();
   if (Serial.available() > 0) {
@@ -78,16 +76,16 @@ void loop() {
 }
 
 /*
- * Respond moonlite style (e.g. with a # and a carriage return at the end)
- */
+   Respond moonlite style (e.g. with a # and a carriage return at the end)
+*/
 void respond(String response) {
   Serial.print(response); Serial.println("#");
 }
 
 /**
- * Determine if a valid command has been received and act on it.
- * This parser is built as a bit of a decision tree for performance reasons.
- */
+   Determine if a valid command has been received and act on it.
+   This parser is built as a bit of a decision tree for performance reasons.
+*/
 void interpretSerial(String command) {
   // Bail out early if the command isn't terminated.
   if (command.charAt(0) != INITIALIZATION_CHAR || command.charAt(command.length() - 1) != TERMINATOR_CHAR) {
@@ -95,7 +93,7 @@ void interpretSerial(String command) {
   } else {
     // Parse the command out from between the chars
     String commandString = command.substring(1, command.length() - 1);
-    
+
     switch (commandString.charAt(0)) {
       case 'C': // Temperature Conversion. This probably isn't necessary
         dht.read();
@@ -110,7 +108,7 @@ void interpretSerial(String command) {
           case 'Q': // HALT movement
             stepper.stop();
             while (stepper.isRunning()) { // Call run() as fast as possible to allow motor to halt as quickly as possible
-              for(int i=0;i<20;i++) { // Can go even faster to halt if we take a bunch of steps between isRunning callse
+              for (int i = 0; i < 20; i++) { // Can go even faster to halt if we take a bunch of steps between isRunning callse
                 stepper.run();
               }
             }
@@ -128,38 +126,38 @@ void interpretSerial(String command) {
           case 'C': // Temperature coefficient
             respond(format2UHex(temperatureCoefficient));
             break;
-            
+
           case 'D': // Stepping delay
             respond(format2UHex(32));
             break;
-            
+
           case 'H': // Half-step
             respond(format2UHex(isHalfStep ? 255 : 0));
             break;
-            
+
           case 'I': // Moving
             respond(format2UHex(stepper.isRunning() ? 1 : 0));
             break;
-            
+
           case 'N': // New Position
             respond(formatUHex(newMotorPosition));
             break;
-            
+
           case 'P': // Position
             respond(formatUHex(stepper.currentPosition()));
             break;
-            
+
           case 'T': // Temperature
             respond(formatFHex(dht.readTemperature()));
             break;
-            
+
           case 'V': // Version
             respond(formatVersion(VERSION));
             break;
-            
+
           default: // Not implemented
             respond("??");
-            
+
         }
         break;
 
@@ -211,9 +209,6 @@ void interpretSerial(String command) {
         respond("??");
     }
   }
-#ifdef DEBUG
-  Serial.print("Command received: "); Serial.println(command);
-#endif
 }
 
 uint8_t parse2UHex(String theHexString) {
@@ -231,9 +226,6 @@ uint16_t parseUHex(String theHexString) {
   char charBuffer[strLen];
   theHexString.toCharArray(charBuffer, strLen);
   sscanf(charBuffer, "%x", &i);
-#ifdef DEBUG
-  Serial.print(theHexString); Serial.print(" = "); Serial.println(i);
-#endif
   return i;
 }
 
