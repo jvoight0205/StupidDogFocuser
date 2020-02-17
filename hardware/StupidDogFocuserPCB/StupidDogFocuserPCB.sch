@@ -14,8 +14,6 @@ Comment3 ""
 Comment4 ""
 $EndDescr
 Wire Wire Line
-	2150 3050 2250 3050
-Wire Wire Line
 	3250 2750 3350 2750
 Wire Wire Line
 	3350 2850 3250 2850
@@ -129,7 +127,7 @@ Wire Wire Line
 	7650 5700 7650 5550
 Text GLabel 7650 5700 3    50   Input ~ 0
 DHT
-Text GLabel 2150 3050 0    50   Input ~ 0
+Text GLabel 2150 2950 0    50   Input ~ 0
 DHT
 Text GLabel 3350 2750 2    50   Input ~ 0
 HalfStep
@@ -535,7 +533,6 @@ NoConn ~ 3250 2550
 NoConn ~ 3250 2650
 NoConn ~ 3250 3050
 NoConn ~ 3250 3150
-NoConn ~ 2250 2950
 NoConn ~ 2250 2850
 NoConn ~ 2250 2750
 NoConn ~ 2250 2650
@@ -546,4 +543,7 @@ NoConn ~ 2250 1750
 NoConn ~ 5900 2800
 NoConn ~ 5900 2900
 NoConn ~ 5900 1900
+Wire Wire Line
+	2150 2950 2250 2950
+NoConn ~ 2250 3050
 $EndSCHEMATC
