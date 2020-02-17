@@ -31,12 +31,8 @@
 
 #define MAXTRAVEL_READOUT 99999
 
-#define currentSpeed            SpeedN[0].value
 #define currentPosition         FocusAbsPosN[0].value
 #define currentTemperature      TemperatureN[0].value
-#define currentDuty             SettingsN[0].value
-#define currentDelay            SettingsN[1].value
-#define currentTicks            SettingsN[2].value
 #define currentRelativeMovement FocusRelPosN[0].value
 #define currentAbsoluteMovement FocusAbsPosN[0].value
 #define currentMinPosition      MinMaxPositionN[0].value
@@ -99,21 +95,6 @@ bool StupidDogFocuser::initProperties()
     IUFillNumberVector(&TemperatureNP, TemperatureN, 1, getDeviceName(), "FOCUS_TEMPERATURE", "Temperature",
                        MAIN_CONTROL_TAB, IP_RO, 0, IPS_IDLE);
 
-    /* Settings of the Stupid Dog Focuser */
-    IUFillNumber(&SettingsN[0], "Duty cycle", "Duty cycle", "%6.0f", 0., 255., 0., 1.0);
-    IUFillNumber(&SettingsN[1], "Step Delay", "Step delay", "%6.0f", 0., 255., 0., 1.0);
-    IUFillNumber(&SettingsN[2], "Motor Steps", "Motor steps per tick", "%6.0f", 0., 255., 0., 1.0);
-    IUFillNumberVector(&SettingsNP, SettingsN, 3, getDeviceName(), "FOCUS_SETTINGS", "Settings", SETTINGS_TAB, IP_RW, 0,
-                       IPS_IDLE);
-
-    /* Power Switches of the Stupid Dog Focuser */
-    IUFillSwitch(&PowerSwitchesS[0], "1", "Switch 1", ISS_OFF);
-    IUFillSwitch(&PowerSwitchesS[1], "2", "Switch 2", ISS_OFF);
-    IUFillSwitch(&PowerSwitchesS[2], "3", "Switch 3", ISS_OFF);
-    IUFillSwitch(&PowerSwitchesS[3], "4", "Switch 4", ISS_ON);
-    IUFillSwitchVector(&PowerSwitchesSP, PowerSwitchesS, 4, getDeviceName(), "SWTICHES", "Power", SETTINGS_TAB, IP_RW,
-                       ISR_1OFMANY, 0, IPS_IDLE);
-
     /* Stupid Dog Focuser should stay within these limits */
     IUFillNumber(&MinMaxPositionN[0], "MINPOS", "Minimum Tick", "%6.0f", 1., 65000., 0., 100.);
     IUFillNumber(&MinMaxPositionN[1], "MAXPOS", "Maximum Tick", "%6.0f", 1., 65000., 0., 55000.);
@@ -155,8 +136,6 @@ bool StupidDogFocuser::updateProperties()
     if (isConnected())
     {
         defineNumber(&TemperatureNP);
-        defineSwitch(&PowerSwitchesSP);
-        defineNumber(&SettingsNP);
         defineNumber(&MinMaxPositionNP);
         defineNumber(&MaxTravelNP);
        
@@ -167,8 +146,6 @@ bool StupidDogFocuser::updateProperties()
     else
     {
         deleteProperty(TemperatureNP.name);
-        deleteProperty(SettingsNP.name);
-        deleteProperty(PowerSwitchesSP.name);
         deleteProperty(MinMaxPositionNP.name);
         deleteProperty(MaxTravelNP.name);
     }
@@ -178,18 +155,18 @@ bool StupidDogFocuser::updateProperties()
 
 bool StupidDogFocuser::Handshake()
 {
-    char firmeware[] = "FV0000000";
+    char firmware[] = "10";
 
     if (isSimulation())
     {
         timerID = SetTimer(POLLMS);
         LOG_INFO("Stupid Dog Focuser Simulator: online. Getting focus parameters...");
         FocusAbsPosN[0].value = simulatedPosition;
-        updateFocuserFirmware(firmeware);
+        updateFocuserFirmware(firmware);
         return true;
     }
 
-    if ((updateFocuserFirmware(firmeware)) < 0)
+    if ((updateFocuserFirmware(firmware)) < 0)
     {
         /* This would be the end*/
         LOG_ERROR("Unknown error while reading firmware.");
@@ -202,23 +179,6 @@ bool StupidDogFocuser::Handshake()
 const char *StupidDogFocuser::getDefaultName()
 {
     return "StupidDogFocuser";
-}
-
-unsigned char StupidDogFocuser::CheckSum(char *_focuser_cmd)
-{
-    char substr[255];
-    unsigned char val = 0;
-
-    for (int i = 0; i < 8; i++)
-        substr[i] = _focuser_cmd[i];
-
-    val = CalculateSum(substr);
-
-    if (val != (unsigned char)_focuser_cmd[8])
-        LOGF_WARN("Checksum: Wrong (%s,%ld), %x != %x", _focuser_cmd, strlen(_focuser_cmd), val,
-                  (unsigned char)_focuser_cmd[8]);
-
-    return val;
 }
 
 unsigned char StupidDogFocuser::CalculateSum(const char *_focuser_cmd)
@@ -236,15 +196,11 @@ int StupidDogFocuser::SendCommand(char *_focuser_cmd)
     int nbytes_written = 0, err_code = 0;
     char focuser_cmd_cks[32], focuser_error[MAXRBUF];
 
-    unsigned char val = 0;
-
-    val = CalculateSum(_focuser_cmd);
 
     for (int i = 0; i < 8; i++)
         focuser_cmd_cks[i] = _focuser_cmd[i];
 
-    focuser_cmd_cks[8] = (unsigned char)val;
-    focuser_cmd_cks[9] = 0;
+    focuser_cmd_cks[8] = 0;
 
     if (isSimulation())
         return 0;
@@ -252,8 +208,7 @@ int StupidDogFocuser::SendCommand(char *_focuser_cmd)
     tcflush(PortFD, TCIOFLUSH);
 
     LOGF_DEBUG("CMD (%#02X %#02X %#02X %#02X %#02X %#02X %#02X %#02X %#02X)", focuser_cmd_cks[0],
-               focuser_cmd_cks[1], focuser_cmd_cks[2], focuser_cmd_cks[3], focuser_cmd_cks[4], focuser_cmd_cks[5], focuser_cmd_cks[6], focuser_cmd_cks[7],
-               focuser_cmd_cks[8]);
+               focuser_cmd_cks[1], focuser_cmd_cks[2], focuser_cmd_cks[3], focuser_cmd_cks[4], focuser_cmd_cks[5], focuser_cmd_cks[6], focuser_cmd_cks[7]);
 
     if ((err_code = tty_write(PortFD, focuser_cmd_cks, FOCUSER_MAX_CMD, &nbytes_written) != TTY_OK))
     {
@@ -796,79 +751,6 @@ bool StupidDogFocuser::SyncFocuser(uint32_t ticks)
 
 bool StupidDogFocuser::ISNewSwitch(const char *dev, const char *name, ISState *states, char *names[], int n)
 {
-    if (dev != nullptr && strcmp(dev, getDeviceName()) == 0)
-    {
-        if (strcmp(name, PowerSwitchesSP.name) == 0)
-        {
-            int ret      = -1;
-            int nset     = 0;
-            int i        = 0;
-            int new_s    = -1;
-            int new_sn   = -1;
-            int cur_s1LL = 0;
-            int cur_s2LR = 0;
-            int cur_s3RL = 0;
-            int cur_s4RR = 0;
-
-            ISwitch *sp;
-
-            PowerSwitchesSP.s = IPS_BUSY;
-            IDSetSwitch(&PowerSwitchesSP, nullptr);
-
-            for (nset = i = 0; i < n; i++)
-            {
-                /* Find numbers with the passed names in the SettingsNP property */
-                sp = IUFindSwitch(&PowerSwitchesSP, names[i]);
-
-                /* If the state found is  (PowerSwitchesS[0]) then process it */
-
-                if (sp == &PowerSwitchesS[0])
-                {
-                    new_s  = (states[i]);
-                    new_sn = 0;
-                    nset++;
-                }
-                else if (sp == &PowerSwitchesS[1])
-                {
-                    new_s  = (states[i]);
-                    new_sn = 1;
-                    nset++;
-                }
-                else if (sp == &PowerSwitchesS[2])
-                {
-                    new_s  = (states[i]);
-                    new_sn = 2;
-                    nset++;
-                }
-                else if (sp == &PowerSwitchesS[3])
-                {
-                    new_s  = (states[i]);
-                    new_sn = 3;
-                    nset++;
-                }
-            }
-            if (nset == 1)
-            {
-                cur_s1LL = cur_s2LR = cur_s3RL = cur_s4RR = 0;
-
-                if ((ret = updateFocuserPowerSwitches(new_s, new_sn, &cur_s1LL, &cur_s2LR, &cur_s3RL, &cur_s4RR)) < 0)
-                {
-                    PowerSwitchesSP.s = IPS_ALERT;
-                    IDSetSwitch(&PowerSwitchesSP, "Unknown error while reading Stupid Dog Focuser power switch settings");
-                    return true;
-                }
-            }
-            else
-            {
-                /* Set property state to idle */
-                PowerSwitchesSP.s = IPS_IDLE;
-
-                IDSetNumber(&SettingsNP, "Power switch settings absent or bogus.");
-                return true;
-            }
-        }
-    }
-
     return INDI::Focuser::ISNewSwitch(dev, name, states, names, n);
 }
 
@@ -878,70 +760,6 @@ bool StupidDogFocuser::ISNewNumber(const char *dev, const char *name, double val
 
     if (dev != nullptr && strcmp(dev, getDeviceName()) == 0)
     {
-        if (strcmp(name, SettingsNP.name) == 0)
-        {
-            /* new speed */
-            double new_duty  = 0;
-            double new_delay = 0;
-            double new_ticks = 0;
-            int ret          = -1;
-
-            for (nset = i = 0; i < n; i++)
-            {
-                /* Find numbers with the passed names in the SettingsNP property */
-                INumber *eqp = IUFindNumber(&SettingsNP, names[i]);
-
-                /* If the number found is  (SettingsN[0]) then process it */
-                if (eqp == &SettingsN[0])
-                {
-                    new_duty = (values[i]);
-                    nset += static_cast<int>(new_duty >= 0 && new_duty <= 255);
-                }
-                else if (eqp == &SettingsN[1])
-                {
-                    new_delay = (values[i]);
-                    nset += static_cast<int>(new_delay >= 0 && new_delay <= 255);
-                }
-                else if (eqp == &SettingsN[2])
-                {
-                    new_ticks = (values[i]);
-                    nset += static_cast<int>(new_ticks >= 0 && new_ticks <= 255);
-                }
-            }
-
-            /* Did we process the three numbers? */
-            if (nset == 3)
-            {
-                /* Set the focuser state to BUSY */
-                SettingsNP.s = IPS_BUSY;
-
-                IDSetNumber(&SettingsNP, nullptr);
-
-                if ((ret = updateFocuserMotorSettings(&new_duty, &new_delay, &new_ticks)) < 0)
-                {
-                    IDSetNumber(&SettingsNP, "Changing to new settings failed");
-                    return false;
-                }
-
-                currentDuty  = new_duty;
-                currentDelay = new_delay;
-                currentTicks = new_ticks;
-
-                SettingsNP.s = IPS_OK;
-                IDSetNumber(&SettingsNP, "Motor settings are now  %3.0f %3.0f %3.0f", currentDuty, currentDelay,
-                            currentTicks);
-                return true;
-            }
-            else
-            {
-                /* Set property state to idle */
-                SettingsNP.s = IPS_IDLE;
-
-                IDSetNumber(&SettingsNP, "Settings absent or bogus.");
-                return false;
-            }
-        }
-
         if (strcmp(name, MinMaxPositionNP.name) == 0)
         {
             /* new positions */
@@ -1069,48 +887,6 @@ void StupidDogFocuser::GetFocusParams()
 
     TemperatureNP.s = IPS_OK;
     IDSetNumber(&TemperatureNP, nullptr);
-
-    currentDuty = currentDelay = currentTicks = 0;
-
-    if ((ret = updateFocuserMotorSettings(&currentDuty, &currentDelay, &currentTicks)) < 0)
-    {
-        SettingsNP.s = IPS_ALERT;
-        LOG_ERROR("Unknown error while reading Stupid Dog Focuser motor settings.");
-        IDSetNumber(&SettingsNP, nullptr);
-        return;
-    }
-
-    SettingsNP.s = IPS_OK;
-    IDSetNumber(&SettingsNP, nullptr);
-
-    if ((ret = updateFocuserPowerSwitches(-1, -1, &cur_s1LL, &cur_s2LR, &cur_s3RL, &cur_s4RR)) < 0)
-    {
-        PowerSwitchesSP.s = IPS_ALERT;
-        LOG_ERROR("Unknown error while reading Stupid Dog Focuser power switch settings.");
-        IDSetSwitch(&PowerSwitchesSP, nullptr);
-        return;
-    }
-
-    PowerSwitchesS[0].s = PowerSwitchesS[1].s = PowerSwitchesS[2].s = PowerSwitchesS[3].s = ISS_OFF;
-
-    if (cur_s1LL == ISS_ON)
-    {
-        PowerSwitchesS[0].s = ISS_ON;
-    }
-    if (cur_s2LR == ISS_ON)
-    {
-        PowerSwitchesS[1].s = ISS_ON;
-    }
-    if (cur_s3RL == ISS_ON)
-    {
-        PowerSwitchesS[2].s = ISS_ON;
-    }
-    if (cur_s4RR == ISS_ON)
-    {
-        PowerSwitchesS[3].s = ISS_ON;
-    }
-    PowerSwitchesSP.s = IPS_OK;
-    IDSetSwitch(&PowerSwitchesSP, nullptr);
 }
 
 IPState StupidDogFocuser::MoveAbsFocuser(uint32_t targetTicks)
@@ -1140,12 +916,6 @@ IPState StupidDogFocuser::MoveRelFocuser(FocusDirection dir, uint32_t ticks)
     return MoveAbsFocuser(FocusAbsPosN[0].value + (ticks * (dir == FOCUS_INWARD ? -1 : 1)));
 }
 
-bool StupidDogFocuser::saveConfigItems(FILE *fp)
-{
-    IUSaveConfigNumber(fp, &SettingsNP);
-
-    return INDI::Focuser::saveConfigItems(fp);
-}
 
 void StupidDogFocuser::TimerHit()
 {
