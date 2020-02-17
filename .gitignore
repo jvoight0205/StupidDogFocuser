@@ -22,4 +22,16 @@ fp-info-cache
 *.xml
 *.csv
 
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+CMakeFiles
+indi_stupiddogfocuser
 
+/software/driver/indi/nbproject/private/Default.properties
+/software/driver/indi/nbproject/private/c_standard_headers_indexer.c
+/software/driver/indi/nbproject/private/Default-build.log
+/software/driver/indi/nbproject/private/launcher.properties
+/software/driver/indi/nbproject/private/CodeAssistancePathMapper.properties
+/software/driver/indi/nbproject/private/cpp_standard_headers_indexer.cpp
+/software/driver/indi/nbproject/private/Default-exec.log
