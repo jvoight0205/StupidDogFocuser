@@ -526,4 +526,24 @@ F 3 "https://www.arduino.cc/en/Main/arduinoBoardUno" H 2750 2350 50  0001 C CNN
 	1    2750 2350
 	1    0    0    -1  
 $EndComp
+NoConn ~ 3250 1750
+NoConn ~ 3250 1950
+NoConn ~ 3250 2150
+NoConn ~ 3250 2350
+NoConn ~ 3250 2450
+NoConn ~ 3250 2550
+NoConn ~ 3250 2650
+NoConn ~ 3250 3050
+NoConn ~ 3250 3150
+NoConn ~ 2250 2950
+NoConn ~ 2250 2850
+NoConn ~ 2250 2750
+NoConn ~ 2250 2650
+NoConn ~ 2250 2550
+NoConn ~ 2250 2150
+NoConn ~ 2250 1850
+NoConn ~ 2250 1750
+NoConn ~ 5900 2800
+NoConn ~ 5900 2900
+NoConn ~ 5900 1900
 $EndSCHEMATC
