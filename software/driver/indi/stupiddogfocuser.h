@@ -39,27 +39,17 @@ protected:
     virtual IPState MoveAbsFocuser(uint32_t targetTicks) override;
     virtual IPState MoveRelFocuser(FocusDirection dir, uint32_t ticks) override;
     virtual bool AbortFocuser() override;
-    virtual void TimerHit() override;
-    virtual bool saveConfigItems(FILE *fp) override;
     virtual bool SyncFocuser(uint32_t ticks) override;
 
 private:
-    unsigned char CheckSum(char *_focuser_cmd);
-    unsigned char CalculateSum(const char *_focuser_cmd);
-    int SendCommand(char *_focuser_cmd);
-    int ReadResponse(char *_focuser_cmd);
+    int sendCommand(const char *cmd);
+    int readResponse(char *_resp);
     void GetFocusParams();
 
     int updateFocuserPosition(double *value);
     int updateFocuserTemperature(double *value);
-    int updateFocuserBacklash(double *value);
     int updateFocuserFirmware(char *_focuser_cmd);
-    int updateFocuserMotorSettings(double *duty, double *delay, double *ticks);
-    int updateFocuserPositionRelativeInward(double value);
-    int updateFocuserPositionRelativeOutward(double value);
     int updateFocuserPositionAbsolute(double value);
-    int updateFocuserPowerSwitches(int s, int new_sn, int *cur_s1LL, int *cur_s2LR, int *cur_s3RL, int *cur_s4RR);
-    int updateFocuserMaxPosition(double *value);
     int updateFocuserSetPosition(const double *value);
 
     int ReadUntilComplete(char *buf, int timeout);
@@ -71,12 +61,6 @@ private:
 
     INumber TemperatureN[1];
     INumberVectorProperty TemperatureNP;
-
-    INumber SettingsN[3];
-    INumberVectorProperty SettingsNP;
-
-    ISwitch PowerSwitchesS[4];
-    ISwitchVectorProperty PowerSwitchesSP;
 
     INumber MinMaxPositionN[2];
     INumberVectorProperty MinMaxPositionNP;
@@ -93,5 +77,13 @@ private:
     INumber AbsMovementN[1];
     INumberVectorProperty AbsMovementNP;
 
-    
+    // MyFocuserPro2 Buffer
+    static const uint8_t ML_RES{ 32};
+
+    // MyFocuserPro2 Delimeter
+    static const char ML_DEL{ '#'};
+
+    // MyFocuserPro2 Timeout
+    static const uint8_t ML_TIMEOUT{ 3};
+
 };
