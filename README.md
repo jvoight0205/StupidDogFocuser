@@ -44,6 +44,7 @@ As it is, we communicate at 115,200 baud. We depend on AccelStepper and a high p
 Serial commands are as follows:
 
 | Command | Description | Response        | Defaults | Comments |
+| ---     | ---         | ---             | ---      | --- |
 | HA#	  | Halt        | HA#             | N/A      | as quickly as possible |
 | GE# 	  | Is enabled? | [T|F]#          | True     | Motor Driver |
 | GR#     | Is reversed?| [T|F]#          | False    | Motor direction |
