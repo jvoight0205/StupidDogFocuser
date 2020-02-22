@@ -96,34 +96,29 @@ StupidDogFocuser::StupidDogFocuser() {
 bool StupidDogFocuser::initProperties() {
     INDI::Focuser::initProperties();
 
+    
+    
     /* Focuser temperature */
-    IUFillNumber(&TemperatureN[0], "TEMPERATURE", "Celsius", "%6.2f", 0., 65000., 0., 10000.);
+    IUFillNumber(&TemperatureN[0], "TEMPERATURE", "Celsius", "%6.2f", -60., 190., 0., 10000.);
     IUFillNumberVector(&TemperatureNP, TemperatureN, 1, getDeviceName(), "FOCUS_TEMPERATURE", "Temperature",
             MAIN_CONTROL_TAB, IP_RO, 0, IPS_IDLE);
 
     /* Stupid Dog Focuser should stay within these limits */
-    IUFillNumber(&MinMaxPositionN[0], "MINPOS", "Minimum Tick", "%6.0f", 1., 65535., 0., 100.);
-    IUFillNumber(&MinMaxPositionN[1], "MAXPOS", "Maximum Tick", "%6.0f", 1., 65535., 0., 50000.);
+    IUFillNumber(&MinMaxPositionN[0], "MINPOS", "Minimum Tick", "%d", -32768, 32767, 0, -32768);
+    IUFillNumber(&MinMaxPositionN[1], "MAXPOS", "Maximum Tick", "%d", -32768, 32767, 0, 32767);
     IUFillNumberVector(&MinMaxPositionNP, MinMaxPositionN, 2, getDeviceName(), "FOCUS_MINMAXPOSITION", "Extrema",
             SETTINGS_TAB, IP_RW, 0, IPS_IDLE);
 
-    IUFillNumber(&MaxTravelN[0], "MAXTRAVEL", "Maximum travel", "%6.0f", 1., 64000., 0., 10000.);
-    IUFillNumberVector(&MaxTravelNP, MaxTravelN, 1, getDeviceName(), "FOCUS_MAXTRAVEL", "Max. travel", SETTINGS_TAB,
-            IP_RW, 0, IPS_IDLE);
-
-    // Cannot change maximum position
-    FocusMaxPosNP.p = IP_RO;
-    FocusMaxPosN[0].value = 65535;
-
+  
     /* Relative and absolute movement */
     FocusRelPosN[0].min = 0.;
     FocusRelPosN[0].max = 5000.;
     FocusRelPosN[0].value = 100;
     FocusRelPosN[0].step = 100;
 
-    FocusAbsPosN[0].min = 0;
-    FocusAbsPosN[0].max = 65535;
-    FocusAbsPosN[0].value = 10000;
+    FocusAbsPosN[0].min = -32768;
+    FocusAbsPosN[0].max = 32767;
+    FocusAbsPosN[0].value = 0;
     FocusAbsPosN[0].step = 1000;
 
     simulatedTemperature = 600.0;
@@ -141,7 +136,6 @@ bool StupidDogFocuser::updateProperties() {
     if (isConnected()) {
         defineNumber(&TemperatureNP);
         defineNumber(&MinMaxPositionNP);
-        defineNumber(&MaxTravelNP);
 
         GetFocusParams();
 
@@ -149,7 +143,6 @@ bool StupidDogFocuser::updateProperties() {
     } else {
         deleteProperty(TemperatureNP.name);
         deleteProperty(MinMaxPositionNP.name);
-        deleteProperty(MaxTravelNP.name);
     }
 
     return true;

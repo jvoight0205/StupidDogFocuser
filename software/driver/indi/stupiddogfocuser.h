@@ -23,6 +23,33 @@
 
 #include "indifocuser.h"
 
+#define HALT "HA#"
+#define IS_ENABLED "GE#"
+#define IS_REVERSED "GR#"
+#define GET_MICROSTEP "GM#"
+#define GET_HIGH_LIMIT "GH#"
+#define GET_LOW_LIMIT "GL#"
+#define GET_SPEED "GS#"
+#define GET_TEMPERATURE "GT#"
+#define GET_POSITION "GP#"
+#define IS_MOVING "GV#"
+#define ABSOLUTE_MOVE "AM%d#"
+#define RELATIVE_MOVE "RM%d#"
+#define REVERSE_DIR "RD%c#"
+#define SYNC_MOTOR "SY%d#"
+#define ENABLE_MOTOR "EN#"
+#define DISABLE_MOTOR "DI#"
+#define SET_MICROSTEP "SM%u#"
+#define SET_SPEED "SP%u#"
+#define SET_HIGH_LIMIT "SH%d#"
+#define SET_LOW_LIMIT "SL%d#"
+#define POSITION_RESPONSE "%d#"
+#define SPEED_RESPONSE "%u#"
+#define TRUE_RESPONSE "T#"
+#define FALSE_RESPONSE "F#"
+#define TEMPERATURE_RESPONSE "%f.2#"
+
+
 class StupidDogFocuser : public INDI::Focuser {
 public:
     StupidDogFocuser();
@@ -68,15 +95,7 @@ private:
     INumber MaxTravelN[1];
     INumberVectorProperty MaxTravelNP;
 
-    INumber SetRegisterPositionN[1];
-    INumberVectorProperty SetRegisterPositionNP;
-
-    INumber RelMovementN[1];
-    INumberVectorProperty RelMovementNP;
-
-    INumber AbsMovementN[1];
-    INumberVectorProperty AbsMovementNP;
-
+  
     // MyFocuserPro2 Buffer
     static const uint8_t ML_RES{ 32};
 
