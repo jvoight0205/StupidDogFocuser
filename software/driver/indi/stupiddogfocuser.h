@@ -24,33 +24,33 @@
 #include "indifocuser.h"
 #include "connectionplugins/connectionserial.h"
 
-#define HALT "HA#"
-#define IS_ENABLED "GE#"
-#define IS_REVERSED "GR#"
-#define GET_MICROSTEP "GM#"
-#define GET_HIGH_LIMIT "GH#"
-#define GET_LOW_LIMIT "GL#"
-#define GET_SPEED "GS#"
-#define GET_TEMPERATURE "GT#"
-#define GET_POSITION "GP#"
-#define IS_MOVING "GV#"
-#define ABSOLUTE_MOVE "AM%d# "
-#define RELATIVE_MOVE "RM%d# "
-#define REVERSE_DIR "RD#"
-#define FORWARD_DIR "FD#"
-#define SYNC_MOTOR "SY%d# "
-#define ENABLE_MOTOR "EN#"
-#define DISABLE_MOTOR "DI#"
-#define SET_MICROSTEP "SM%u# "
-#define SET_SPEED "SP%u#"
-#define SET_HIGH_LIMIT "SH%d# "
-#define SET_LOW_LIMIT "SL%d# "
-#define SIGNED_RESPONSE "%d# "
-#define UNSIGNED_RESPONSE "%u# "
-#define TRUE_RESPONSE "T#"
-#define FALSE_RESPONSE "F#"
-#define FLOAT_RESPONSE "%f# "
-#define GET_VERSION "VE#"
+#define HALT "HA"
+#define IS_ENABLED "GE"
+#define IS_REVERSED "GR"
+#define GET_MICROSTEP "GM"
+#define GET_HIGH_LIMIT "GH"
+#define GET_LOW_LIMIT "GL"
+#define GET_SPEED "GS"
+#define GET_TEMPERATURE "GT"
+#define GET_POSITION "GP"
+#define IS_MOVING "GV"
+#define ABSOLUTE_MOVE "AM%d "
+#define RELATIVE_MOVE "RM%d"
+#define REVERSE_DIR "RD"
+#define FORWARD_DIR "FD"
+#define SYNC_MOTOR "SY%d "
+#define ENABLE_MOTOR "EN"
+#define DISABLE_MOTOR "DI"
+#define SET_MICROSTEP "SM%u "
+#define SET_SPEED "SP%u"
+#define SET_HIGH_LIMIT "SH%d"
+#define SET_LOW_LIMIT "SL%d"
+#define TRUE_RESPONSE "T"
+#define FALSE_RESPONSE "F"
+#define SIGNED_RESPONSE "%d"
+#define UNSIGNED_RESPONSE "%u"
+#define FLOAT_RESPONSE "%f"
+#define GET_VERSION "VE"
 
 
 // Version should match hardware response to make sure our protocol works.
@@ -73,6 +73,7 @@ protected:
     virtual IPState MoveRelFocuser(FocusDirection dir, uint32_t ticks) override;
     virtual bool AbortFocuser() override;
     virtual bool SyncFocuser(uint32_t ticks) override;
+    virtual bool SetFocuserSpeed(int speed) override;
 
 private:
     int sendCommand(const char *cmd);
@@ -95,7 +96,7 @@ private:
 
     INumber MinMaxPositionN[2];
     INumberVectorProperty MinMaxPositionNP;
-    
+
     INumber SpeedN[1];
     INumberVectorProperty SpeedNP;
 
@@ -106,7 +107,11 @@ private:
     ISwitchVectorProperty ReversedSP;
 
     ISwitch Enabled[2];
+
     ISwitchVectorProperty EnabledSP;
+
+
+    //Connection::Serial *serialConnection{ nullptr };
 
     // MyFocuserPro2 Buffer
     static const uint8_t ML_RES{ 32};
@@ -115,6 +120,6 @@ private:
     static const char ML_DEL{ 0xA};
 
     // MyFocuserPro2 Timeout
-    static const uint8_t ML_TIMEOUT{ 3 };
+    static const uint8_t ML_TIMEOUT{ 3};
 
 };
