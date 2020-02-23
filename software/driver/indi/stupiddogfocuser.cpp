@@ -25,34 +25,17 @@
 #include <memory>
 #include <cstring>
 #include <termios.h>
+#include <unistd.h>
 
 #define FOCUSER_MAX_CMD  9
 #define FOCUSER_TIMEOUT  3
 
-#define MAXTRAVEL_READOUT 99999
-
 #define currentPosition         FocusAbsPosN[0].value
 #define currentTemperature      TemperatureN[0].value
-#define currentRelativeMovement FocusRelPosN[0].value
-#define currentAbsoluteMovement FocusAbsPosN[0].value
 #define currentMinPosition      MinMaxPositionN[0].value
 #define currentMaxPosition      MinMaxPositionN[1].value
-#define currentMaxTravel        FocusMaxPosN[0].value
 
 #define SETTINGS_TAB "Settings"
-
-#define FEED_GO ":FG#"
-#define HALT_MOVE_COMMAND ":FQ#"
-#define GET_HALF_STEP ":GH#"
-#define GET_ISMOVING ":GI#"
-#define GET_NEW_POSITION ":GN#"
-#define GET_POSITION ":GP#"
-#define GET_TEMPERATURE ":GT#"
-#define GET_VERSION ":GV#"
-#define SET_FULL_STEP ":SF#"
-#define SET_HALF_STEP ":SH#"
-#define SET_NEW_POSITION ":SN%u#"
-#define SET_CURRENT_POSITION ":SP%u#"
 
 static std::unique_ptr<StupidDogFocuser> stupidDogFocuser(new StupidDogFocuser());
 
@@ -62,10 +45,6 @@ void ISGetProperties(const char *dev) {
 
 void ISNewSwitch(const char *dev, const char *name, ISState *states, char *names[], int n) {
     stupidDogFocuser->ISNewSwitch(dev, name, states, names, n);
-}
-
-void ISNewText(const char *dev, const char *name, char *texts[], char *names[], int n) {
-    stupidDogFocuser->ISNewText(dev, name, texts, names, n);
 }
 
 void ISNewNumber(const char *dev, const char *name, double values[], char *names[], int n) {
@@ -89,15 +68,30 @@ void ISSnoopDevice(XMLEle *root) {
 }
 
 StupidDogFocuser::StupidDogFocuser() {
-    FI::SetCapability(FOCUSER_CAN_ABS_MOVE | FOCUSER_CAN_REL_MOVE | FOCUSER_CAN_ABORT | FOCUSER_CAN_SYNC);
+   
+    FI::SetCapability(
+            FOCUSER_CAN_ABS_MOVE |
+            FOCUSER_CAN_REL_MOVE |
+            FOCUSER_CAN_ABORT |
+            FOCUSER_CAN_SYNC |
+            FOCUSER_HAS_VARIABLE_SPEED |
+            FOCUSER_CAN_REVERSE |
+            FOCUSER_HAS_BACKLASH);
     setSupportedConnections(CONNECTION_SERIAL);
+    //serialConnection->setDefaultBaudRate(Connection::Serial::B_115200);
+    // Reconnect serial port after write error
+    LOG_INFO("Connecting serial port");
+    //    
+    //    serialConnection->Connect();
+    //    PortFD = serialConnection->getPortFD();
+    //    
+    LOG_INFO("Reconnected");
+
 }
 
 bool StupidDogFocuser::initProperties() {
     INDI::Focuser::initProperties();
 
-    
-    
     /* Focuser temperature */
     IUFillNumber(&TemperatureN[0], "TEMPERATURE", "Celsius", "%6.2f", -60., 190., 0., 10000.);
     IUFillNumberVector(&TemperatureNP, TemperatureN, 1, getDeviceName(), "FOCUS_TEMPERATURE", "Temperature",
@@ -106,15 +100,37 @@ bool StupidDogFocuser::initProperties() {
     /* Stupid Dog Focuser should stay within these limits */
     IUFillNumber(&MinMaxPositionN[0], "MINPOS", "Minimum Tick", "%d", -32768, 32767, 0, -32768);
     IUFillNumber(&MinMaxPositionN[1], "MAXPOS", "Maximum Tick", "%d", -32768, 32767, 0, 32767);
+    // Place on Settings Tab
     IUFillNumberVector(&MinMaxPositionNP, MinMaxPositionN, 2, getDeviceName(), "FOCUS_MINMAXPOSITION", "Extrema",
             SETTINGS_TAB, IP_RW, 0, IPS_IDLE);
+ 
+    // Reversed
+    IUFillSwitch(&Reversed[0], "FORWARD", "Forward", ISS_OFF);
+    IUFillSwitch(&Reversed[0], "REVERSE", "Reverse", ISS_ON);
 
-  
-    /* Relative and absolute movement */
-    FocusRelPosN[0].min = 0.;
-    FocusRelPosN[0].max = 5000.;
-    FocusRelPosN[0].value = 100;
-    FocusRelPosN[0].step = 100;
+    IUFillSwitchVector(&ReversedSP, Reversed, 2, getDeviceName(), "DIRECTION", "Motor Direction",
+            SETTINGS_TAB, IP_RW, ISR_1OFMANY, 0, IPS_IDLE);
+
+    // Enabled
+    IUFillSwitch(&Enabled[0], "ENABLE", "Enable", ISS_ON);
+    IUFillSwitch(&Enabled[1], "DISABLE", "Disable", ISS_OFF);
+    IUFillSwitchVector(&EnabledSP, Enabled, 2, getDeviceName(), "ENABLE", "Motor Power",
+            SETTINGS_TAB, IP_RW, ISR_1OFMANY, 0, IPS_IDLE);
+
+    // Microstep
+    IUFillNumber(&MicrostepN[0], "MICROSTEP", "Microstep reciprocal", "%u", 1, 32, 0, 1);
+    // Place on Settings Tab
+    IUFillNumberVector(&MicrostepNP, MicrostepN, 2, getDeviceName(), "FOCUS_MICROSTEP", "Microstep 1/n",
+            SETTINGS_TAB, IP_RW, 0, IPS_IDLE);
+
+    // Speed
+    IUFillNumber(&SpeedN[0], "SPEED", "Speed", "%u", 200, 3000, 0, 1000);
+    // Place on Settings Tab
+    IUFillNumberVector(&SpeedNP, SpeedN, 1, getDeviceName(), "SPEED", "Speed",
+            SETTINGS_TAB, IP_RW, 0, IPS_IDLE);
+
+
+    /* Relative and absolute movemennt */
 
     FocusAbsPosN[0].min = -32768;
     FocusAbsPosN[0].max = 32767;
@@ -136,20 +152,29 @@ bool StupidDogFocuser::updateProperties() {
     if (isConnected()) {
         defineNumber(&TemperatureNP);
         defineNumber(&MinMaxPositionNP);
-
+        defineNumber(&MicrostepNP);
+        defineNumber(&SpeedNP);
+        defineSwitch(&EnabledSP);
+        defineSwitch(&ReversedSP);
+        
         GetFocusParams();
 
         LOG_DEBUG("StupidDogFocuser parameters readout complete, focuser ready for use.");
     } else {
         deleteProperty(TemperatureNP.name);
         deleteProperty(MinMaxPositionNP.name);
+        deleteProperty(MicrostepNP.name);
+        deleteProperty(SpeedNP.name);
+        deleteProperty(EnabledSP.name);
+        deleteProperty(ReversedSP.name);
+       
     }
 
     return true;
 }
 
 bool StupidDogFocuser::Handshake() {
-    char firmware[] = "10";
+    char firmware[5];
 
     if (isSimulation()) {
         timerID = SetTimer(POLLMS);
@@ -169,34 +194,34 @@ bool StupidDogFocuser::Handshake() {
 }
 
 const char *StupidDogFocuser::getDefaultName() {
-    return "StupidDogFocuser";
+    return "Stupid Dog Focuser";
 }
 
-int StupidDogFocuser::sendCommand(const char * cmd)
-{
+int StupidDogFocuser::sendCommand(const char * cmd) {
     int nbytes_written = 0, rc = -1;
+
+    int len = strlen(cmd)+1;
+    char commandString[len];
+    snprintf(commandString, len, "%s\n", cmd);
 
     tcflush(PortFD, TCIOFLUSH);
 
     LOGF_DEBUG("CMD <%s>", cmd);
 
-    if ((rc = tty_write_string(PortFD, cmd, &nbytes_written)) != TTY_OK)
-    {
+    if ((rc = tty_write_string(PortFD, commandString, &nbytes_written)) != TTY_OK) {
         char errstr[MAXRBUF] = {0};
         tty_error_msg(rc, errstr, MAXRBUF);
         LOGF_ERROR("Serial write error: %s.", errstr);
         return -1;
     }
-    
+    LOG_DEBUG("Finished writing serial cmd");
     return nbytes_written;
 }
 
-int StupidDogFocuser::readResponse(char *res)
-{
+int StupidDogFocuser::readResponse(char *res) {
     int nbytes_read = 0, rc = -1;
 
-    if ((rc = tty_nread_section(PortFD, res, ML_RES, ML_DEL, ML_TIMEOUT, &nbytes_read)) != TTY_OK)
-    {
+    if ((rc = tty_nread_section(PortFD, res, ML_RES, ML_DEL, ML_TIMEOUT, &nbytes_read)) != TTY_OK) {
         char errstr[MAXRBUF] = {0};
         tty_error_msg(rc, errstr, MAXRBUF);
         LOGF_ERROR("Serial read error: %s.", errstr);
@@ -205,13 +230,13 @@ int StupidDogFocuser::readResponse(char *res)
 
     LOGF_DEBUG("RES <%s>", res);
 
-    tcflush(PortFD, TCIOFLUSH);
+    tcflush(PortFD, TCIFLUSH);
 
     return nbytes_read;
 }
 
 int StupidDogFocuser::updateFocuserPosition(double *value) {
-    unsigned temp;
+    int temp;
     char focuser_cmd[FOCUSER_MAX_CMD];
     int focuser_rc;
 
@@ -230,7 +255,7 @@ int StupidDogFocuser::updateFocuserPosition(double *value) {
     if ((focuser_rc = readResponse(focuser_cmd)) < 0)
         return focuser_rc;
 
-    if (sscanf(focuser_cmd, "%d#", &temp) < 1)
+    if (sscanf(focuser_cmd, SIGNED_RESPONSE, &temp) < 1)
         return -1;
 
     *value = (double) temp;
@@ -244,7 +269,7 @@ int StupidDogFocuser::updateFocuserTemperature(double *value) {
     LOGF_DEBUG("Update Temperature: %g", value);
 
     float temp;
-    char focuser_cmd[32];
+    char focuser_cmd[FOCUSER_MAX_CMD];
     int focuser_rc;
 
     strncpy(focuser_cmd, GET_TEMPERATURE, 5);
@@ -253,11 +278,11 @@ int StupidDogFocuser::updateFocuserTemperature(double *value) {
         return focuser_rc;
 
     if (isSimulation())
-        snprintf(focuser_cmd, 32, "%f#", simulatedTemperature);
+        snprintf(focuser_cmd, FOCUSER_MAX_CMD, "-99.9");
     else if ((focuser_rc = readResponse(focuser_cmd)) < 0)
         return focuser_rc;
 
-    if (sscanf(focuser_cmd, "%f#", &temp) < 1)
+    if (sscanf(focuser_cmd, FLOAT_RESPONSE, &temp) < 1)
         return -1;
 
     *value = temp;
@@ -279,38 +304,41 @@ int StupidDogFocuser::updateFocuserFirmware(char *_focuser_cmd) {
         strncpy(_focuser_cmd, "SIM", 4);
     else if ((focuser_rc = readResponse(_focuser_cmd)) < 0)
         return focuser_rc;
-
+    LOG_INFO("Received firmware response.");
     return 0;
 }
 
 int StupidDogFocuser::updateFocuserPositionAbsolute(double value) {
     char focuser_cmd[32];
     int focuser_rc;
+    int newPosition;
 
-    LOGF_DEBUG("Moving Absolute Position: %g", value);
+    LOGF_DEBUG("Moving Absolute Position: %d", (int) value);
 
     if (isSimulation()) {
         simulatedPosition = value;
         return 0;
     }
 
-    focuser_cmd[0] = 0;
-
-
-    snprintf(focuser_cmd, 10, SET_NEW_POSITION, (int) value);
+    snprintf(focuser_cmd, 10, ABSOLUTE_MOVE, (int) value);
 
     if ((focuser_rc = sendCommand(focuser_cmd)) < 0)
         return focuser_rc;
 
-    strncpy(focuser_cmd, FEED_GO, 5);
-    if ((focuser_rc = sendCommand(focuser_cmd)) < 0)
+    else if ((focuser_rc = readResponse(focuser_cmd)) < 0)
         return focuser_rc;
+
+    if (sscanf(focuser_cmd, SIGNED_RESPONSE, &newPosition) < 1)
+        return -1;
+
+    currentPosition = newPosition;
+    value = (double) newPosition;
 
     return 0;
 }
 
 bool StupidDogFocuser::SyncFocuser(uint32_t ticks) {
-    char vl_tmp[10];
+    char focuser_cmd[10];
     int ret_read_tmp;
 
     if (isSimulation()) {
@@ -318,13 +346,23 @@ bool StupidDogFocuser::SyncFocuser(uint32_t ticks) {
         return true;
     }
 
-    snprintf(vl_tmp, 10, SET_CURRENT_POSITION, ticks);
+    snprintf(focuser_cmd, 10, SYNC_MOTOR, ticks);
 
 
-    if ((ret_read_tmp = sendCommand(vl_tmp)) < 0)
+    if ((ret_read_tmp = sendCommand(focuser_cmd)) < 0)
+        return false;
+    else if ((ret_read_tmp = readResponse(focuser_cmd)) < 0)
+        return ret_read_tmp;
+
+    if (sscanf(focuser_cmd, SIGNED_RESPONSE, &ticks) < 1)
         return false;
 
+    currentPosition = ticks;
     return true;
+}
+
+void ISNewText(const char *dev, const char *name, char *texts[], char *names[], int n) {
+    stupidDogFocuser->ISNewText(dev, name, texts, names, n);
 }
 
 bool StupidDogFocuser::ISNewSwitch(const char *dev, const char *name, ISState *states, char *names[], int n) {
@@ -337,7 +375,7 @@ bool StupidDogFocuser::ISNewNumber(const char *dev, const char *name, double val
 
 void StupidDogFocuser::GetFocusParams() {
     int ret = -1;
-    
+    LOG_INFO("Getting Focus Params.");
 
     if ((ret = updateFocuserPosition(&currentPosition)) < 0) {
         FocusAbsPosNP.s = IPS_ALERT;
@@ -374,9 +412,8 @@ IPState StupidDogFocuser::MoveAbsFocuser(uint32_t targetTicks) {
         return IPS_ALERT;
     }
 
-    RemoveTimer(timerID);
-    timerID = SetTimer(250);
-    return IPS_BUSY;
+
+    return IPS_OK;
 }
 
 IPState StupidDogFocuser::MoveRelFocuser(FocusDirection dir, uint32_t ticks) {
