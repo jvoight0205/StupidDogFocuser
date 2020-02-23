@@ -22,6 +22,7 @@
 #pragma once
 
 #include "indifocuser.h"
+#include "connectionplugins/connectionserial.h"
 
 #define HALT "HA#"
 #define IS_ENABLED "GE#"
@@ -33,22 +34,27 @@
 #define GET_TEMPERATURE "GT#"
 #define GET_POSITION "GP#"
 #define IS_MOVING "GV#"
-#define ABSOLUTE_MOVE "AM%d#"
-#define RELATIVE_MOVE "RM%d#"
-#define REVERSE_DIR "RD%c#"
-#define SYNC_MOTOR "SY%d#"
+#define ABSOLUTE_MOVE "AM%d# "
+#define RELATIVE_MOVE "RM%d# "
+#define REVERSE_DIR "RD#"
+#define FORWARD_DIR "FD#"
+#define SYNC_MOTOR "SY%d# "
 #define ENABLE_MOTOR "EN#"
 #define DISABLE_MOTOR "DI#"
-#define SET_MICROSTEP "SM%u#"
+#define SET_MICROSTEP "SM%u# "
 #define SET_SPEED "SP%u#"
-#define SET_HIGH_LIMIT "SH%d#"
-#define SET_LOW_LIMIT "SL%d#"
-#define POSITION_RESPONSE "%d#"
-#define SPEED_RESPONSE "%u#"
+#define SET_HIGH_LIMIT "SH%d# "
+#define SET_LOW_LIMIT "SL%d# "
+#define SIGNED_RESPONSE "%d# "
+#define UNSIGNED_RESPONSE "%u# "
 #define TRUE_RESPONSE "T#"
 #define FALSE_RESPONSE "F#"
-#define TEMPERATURE_RESPONSE "%f.2#"
+#define FLOAT_RESPONSE "%f# "
+#define GET_VERSION "VE#"
 
+
+// Version should match hardware response to make sure our protocol works.
+#define VERSION .9
 
 class StupidDogFocuser : public INDI::Focuser {
 public:
@@ -79,8 +85,6 @@ private:
     int updateFocuserPositionAbsolute(double value);
     int updateFocuserSetPosition(const double *value);
 
-    int ReadUntilComplete(char *buf, int timeout);
-
     int timerID{ -1};
     double targetPos{ 0};
     double simulatedTemperature{ 0};
@@ -91,18 +95,26 @@ private:
 
     INumber MinMaxPositionN[2];
     INumberVectorProperty MinMaxPositionNP;
+    
+    INumber SpeedN[1];
+    INumberVectorProperty SpeedNP;
 
-    INumber MaxTravelN[1];
-    INumberVectorProperty MaxTravelNP;
+    INumber MicrostepN[1];
+    INumberVectorProperty MicrostepNP;
 
-  
+    ISwitch Reversed[2];
+    ISwitchVectorProperty ReversedSP;
+
+    ISwitch Enabled[2];
+    ISwitchVectorProperty EnabledSP;
+
     // MyFocuserPro2 Buffer
     static const uint8_t ML_RES{ 32};
 
     // MyFocuserPro2 Delimeter
-    static const char ML_DEL{ '#'};
+    static const char ML_DEL{ 0xA};
 
     // MyFocuserPro2 Timeout
-    static const uint8_t ML_TIMEOUT{ 3};
+    static const uint8_t ML_TIMEOUT{ 3 };
 
 };

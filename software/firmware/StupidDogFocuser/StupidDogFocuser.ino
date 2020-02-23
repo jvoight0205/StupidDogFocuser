@@ -10,11 +10,11 @@
     Written and copyright by Jeff Voight, Feb 2020,
 
     In order to compile and deploy this, you will need to add the following libraries to your IDE.
-    * AccelStepper
-    * Encoder
-    * DHT Sensor Library
+      AccelStepper
+      Encoder
+      DHT Sensor Library
 
-    
+
     TODO: Put a normal license here.
 
     Meanwhile:
@@ -31,7 +31,7 @@
 #define TURBO_PIN 7
 #define HALF_STEP_PIN A4
 #define DHT_PIN 12
-#define VERSION 1.0
+#define VERSION ".9#"
 #define INITIALIZATION_CHAR ':'
 #define TERMINATOR_CHAR '#'
 #define NEWLINE_CHAR '\n'
@@ -40,24 +40,60 @@
 #define DHTTYPE DHT11
 //#define DHTTYPE DHT22
 
-int16_t encoderPosition = 0; // Set to be incorrect on purpose so that it gets updated in setup.
-uint16_t motorPosition = 0x7FFF; // midpoint of 0xFFFF
-uint16_t newMotorPosition = motorPosition; // for two-stage moves
+// TODO: Figure out how to link this directly to the ASCOM and INDI driver source includes.
+#define HALT "HA#"
+#define IS_ENABLED "GE#"
+#define IS_REVERSED "GR#"
+#define GET_MICROSTEP "GM#"
+#define GET_HIGH_LIMIT "GH#"
+#define GET_LOW_LIMIT "GL#"
+#define GET_SPEED "GS#"
+#define GET_TEMPERATURE "GT#"
+#define GET_POSITION "GP#"
+#define IS_MOVING "GV#"
+#define ABSOLUTE_MOVE "AM%d# "
+#define RELATIVE_MOVE "RM%d# "
+#define REVERSE_DIR "RD#"
+#define FORWARD_DIR "FD#"
+#define SYNC_MOTOR "SY%d# "
+#define ENABLE_MOTOR "EN#"
+#define DISABLE_MOTOR "DI#"
+#define SET_MICROSTEP "SM%u# "
+#define SET_SPEED "SP%u#"
+#define SET_HIGH_LIMIT "SH%d# "
+#define SET_LOW_LIMIT "SL%d# "
+#define SIGNED_RESPONSE "%d# "
+#define UNSIGNED_RESPONSE "%u# "
+#define TRUE_RESPONSE "T#"
+#define FALSE_RESPONSE "F#"
+#define FLOAT_RESPONSE "%f# "
+#define GET_VERSION "VE#"
 
-uint16_t maxSpeed = 1000;
-uint8_t accelRate = 150;
-bool isHalfStep = false;
-int8_t temperatureCoefficient = 0;
+#define BUFFER_SIZE 10
+
+int16_t encoderPosition = 0; // Set to be incorrect on purpose so that it gets updated in setup.
+uint16_t motorPosition = 0; //
+
+uint16_t speed = 1000;
+uint8_t accelRate = speed / 8;
+uint8_t microstep = 1;
+bool enabled = true;
+bool reversed = false;
+uint16_t lowLimit = -32768;
+uint16_t highLimit = 32767;
+
+char buffer[BUFFER_SIZE];
+char commandLine[BUFFER_SIZE];
 
 AccelStepper stepper(AccelStepper::DRIVER, STEP_PIN, DIR_PIN) ; // Skipping enable pin on this
 Encoder encoder(ENC_A, ENC_B);
 DHT dht(DHT_PIN, DHTTYPE);
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
   while (!Serial); // Wait for Serial initialization. Should be very little time.
-  respond(formatVersion(VERSION));
-  
+  //Serial.println(VERSION);
+
   initializeDHT();
   initializeStepper();
   initializeEncoder();
@@ -76,7 +112,10 @@ void loop() {
   stepper.run();
 
   if (Serial.available() > 0) {
-    interpretSerial(Serial.readStringUntil(NEWLINE_CHAR));
+    String theCommand = Serial.readStringUntil(NEWLINE_CHAR);
+    theCommand.toCharArray(commandLine, BUFFER_SIZE);
+    
+    interpretSerial(commandLine);
   }
   stepper.run();
 
@@ -87,225 +126,264 @@ void loop() {
   motorPosition = stepper.currentPosition();
 }
 
-/*
-   Respond moonlite style (e.g. with a # and a carriage return at the end)
-*/
-void respond(String response) {
-  Serial.print(response); Serial.println("#");
-}
 
-void error(String command){
-  respond("Error in command: " + command);
-}
 
 /**
    Determine if a valid command has been received and act on it.
    This parser is built as a bit of a decision tree for performance reasons.
 */
-void interpretSerial(String command) {
-  // Parse the command out from between the chars
-  String commandString = command.substring(1, command.length() - 1);
-
-  switch (commandString.charAt(0)) {
-
-    // Temperature Conversion. This probably isn't necessary
-    case 'C':
-      dht.read();
-      break;
-
-    // Feed Commands
-    case 'F':
-      switch (commandString.charAt(1)) {
-
-        // Go-to (move) to new set position
-        case 'G':
-          stepper.moveTo(newMotorPosition);
-          break;
-
-        // HALT movement
-        case 'Q':
-          stepper.stop();
-          while (stepper.isRunning()) { // Call run() as fast as possible to allow motor to halt as quickly as possible
-            for (int i = 0; i < 20; i++) { // Can go even faster to halt if we take a bunch of steps between isRunning calls.
-              stepper.run();
-            }
-          }
-          motorPosition = stepper.currentPosition();
-          newMotorPosition = motorPosition; // Make sure we don't take off again.
-          break;
-
-        // Error
-        default:
-          error(command);
+void interpretSerial(char * command) {
+  int myInt = 0;
+  double myDouble = 0.0;
+  float myFloat = 0.0;
+  
+  strcpy(buffer, "ERROROR");
+  
+  if (strcmp(command, HALT) == 0) {
+    stepper.stop();
+    while (stepper.isRunning()) { // Call run() as fast as possible to allow motor to halt as quickly as possible
+      for (int i = 0; i < 20; i++) { // Can go even faster to halt if we take a bunch of steps between isRunning calls.
+        stepper.run();
       }
-      break;
-
-    // Getter Commands
-    case 'G':
-      switch (commandString.charAt(1)) {
-
-        // Temperature coefficient
-        case 'C':
-          respond(format2UHex(temperatureCoefficient));
-          break;
-
-        // Stepping delay
-        case 'D':
-          respond(format2UHex(32));
-          break;
-
-        // Half-step
-        case 'H':
-          respond(format2UHex(isHalfStep ? 255 : 0));
-          break;
-
-        // Moving
-        case 'I':
-          respond(format2UHex(stepper.isRunning() ? 1 : 0));
-          break;
-
-        // New Position
-        case 'N':
-          respond(formatUHex(newMotorPosition));
-          break;
-
-        // Position
-        case 'P':
-          respond(formatUHex(stepper.currentPosition()));
-          break;
-
-        // Temperature
-        case 'T':
-          respond(formatFHex(dht.readTemperature()));
-          break;
-
-        // Version
-        case 'V':
-          respond(formatVersion(VERSION));
-          break;
-
-        // Error
-        default:
-          error(command);
-
-      }
-      break;
-
-    // Setter commands
-    case 'S':
-      switch (commandString.charAt(1)) {
-
-        // Temperature coefficient
-        case 'C':
-          temperatureCoefficient = parse2UHex(commandString.substring(2));
-          break;
-
-        // Stepping delay
-        case 'D':
-          // Ignored
-          break;
-
-        // Full-step mode
-        case 'F':
-          isHalfStep = false;
-          digitalWrite(HALF_STEP_PIN, HIGH);
-          break;
-
-        // Half-step mode
-        case 'H':
-          isHalfStep = true;
-          digitalWrite(HALF_STEP_PIN, HIGH);
-          break;
-
-        // New position
-        case 'N':
-          newMotorPosition = parseUHex(commandString.substring(2));
-          break;
-
-        // Current position
-        case 'P':
-          newMotorPosition = parseUHex(commandString.substring(2));
-          stepper.setCurrentPosition(newMotorPosition);
-          motorPosition = newMotorPosition; // Make sure everything points to the same number
-          break;
-
-        // Error
-        default:
-          error(command);
-      }
-      break;
-
-    // Activate Temperature Compensation Focusing
-    case '+':
-      break; // Not implemented
-
-    // Deactivate Temperature Compensation Focusing
-    case '-':
-      break; // Not implemented
-
-    case 'P':
-      break;
-
-    // Error
-    default:
-      error(command);
+    }
+    strcpy(buffer, HALT);
   }
+
+  else if (strcmp(command, IS_ENABLED) == 0) {
+    strcpy(buffer, enabled ? TRUE_RESPONSE : FALSE_RESPONSE);
+  }
+
+  else if (strcmp(command, IS_REVERSED) == 0) {
+    strcpy(buffer, reversed ? REVERSE_DIR : FORWARD_DIR);
+  }
+
+  else if (strcmp(command, IS_MOVING) == 0) {
+    strcpy(buffer, stepper.isRunning() ? TRUE_RESPONSE : FALSE_RESPONSE);
+  }
+
+  else if (strcmp(command, GET_VERSION) == 0) {
+    sprintf(buffer, VERSION);
+  }
+
+  else if (strcmp(command, GET_MICROSTEP) == 0) {
+    sprintf(buffer, UNSIGNED_RESPONSE, microstep);
+  }
+
+  else if (strcmp(command, GET_HIGH_LIMIT) == 0) {
+    sprintf(buffer, SIGNED_RESPONSE, highLimit);
+  }
+
+  else if (strcmp(command, GET_LOW_LIMIT) == 0) {
+    sprintf(buffer, SIGNED_RESPONSE, lowLimit);
+  }
+
+  else if (strcmp(command, GET_SPEED) == 0) {
+    int speed = stepper.speed();
+    sprintf(buffer, UNSIGNED_RESPONSE, speed);
+  }
+
+  else if (strcmp(command, GET_TEMPERATURE) == 0) {
+    sprintf(buffer, FLOAT_RESPONSE, dht.readTemperature());
+  }
+
+  else if (strcmp(command, GET_POSITION) == 0) {
+    int currentPosition = stepper.currentPosition();
+    sprintf(buffer, SIGNED_RESPONSE, currentPosition);
+  }
+
+  else if (strcmp(command, ENABLE_MOTOR) == 0) {
+    enabled = true;
+    stepper.enableOutputs();
+    strcpy(buffer, enabled ? TRUE_RESPONSE : FALSE_RESPONSE);
+  }
+
+  else if (strcmp(command, DISABLE_MOTOR) == 0) {
+    enabled = false;
+    stepper.disableOutputs();
+    strcpy(buffer, enabled ? TRUE_RESPONSE : FALSE_RESPONSE);
+  }
+
+  else if (strcmp(command, REVERSE_DIR) == 0) {
+    reversed = true;
+    strcpy(buffer, reversed ? REVERSE_DIR : FORWARD_DIR);
+  }
+
+  else if (strcmp(command, FORWARD_DIR) == 0) {
+    reversed = false;
+    strcpy(buffer, reversed ? REVERSE_DIR : FORWARD_DIR);
+  }
+
+  else if(sscanf(command, SYNC_MOTOR, &myInt) == 1) {
+    stepper.setCurrentPosition(myInt);
+    sprintf(buffer, SIGNED_RESPONSE, stepper.currentPosition());
+  }
+  
+  else if(sscanf(command, ABSOLUTE_MOVE, &myInt) == 1 ){
+    stepper.moveTo(myInt);
+    sprintf(buffer, SIGNED_RESPONSE, stepper.targetPosition());
+  }
+
+  else if(sscanf(command, RELATIVE_MOVE, &myInt) == 1 ){
+    stepper.moveTo(stepper.targetPosition() + myInt * reversed?-1:1);
+    sprintf(buffer, SIGNED_RESPONSE, stepper.targetPosition());
+  }
+
+  strcpy(command, "");
+  Serial.println(buffer);
+
+
+  //Serial.print("dbg:'");Serial.print(command);Serial.println("'");
+
+  // Parse the command out from between the chars
+  //  String commandString = command.substring(1, command.length() - 1);
+  //
+  //  switch (commandString.charAt(0)) {
+  //
+  //    // Temperature Conversion. This probably isn't necessary
+  //    case 'C':
+  //      dht.read();
+  //      break;
+  //
+  //    // Feed Commands
+  //    case 'F':
+  //      switch (commandString.charAt(1)) {
+  //
+  //        // Go-to (move) to new set position
+  //        case 'G':
+  //          stepper.moveTo(newMotorPosition);
+  //          break;
+  //
+  //        // HALT movement
+  //        case 'Q':
+  //          stepper.stop();
+  //          while (stepper.isRunning()) { // Call run() as fast as possible to allow motor to halt as quickly as possible
+  //            for (int i = 0; i < 20; i++) { // Can go even faster to halt if we take a bunch of steps between isRunning calls.
+  //              stepper.run();
+  //            }
+  //          }
+  //          motorPosition = stepper.currentPosition();
+  //          newMotorPosition = motorPosition; // Make sure we don't take off again.
+  //          break;
+  //
+  //        // Error
+  //        default:
+  //          error(command);
+  //      }
+  //      break;
+  //
+  //    // Getter Commands
+  //    case 'G':
+  //      switch (commandString.charAt(1)) {
+  //
+  //        // Temperature coefficient
+  //        case 'C':
+  //          respond(format2UHex(temperatureCoefficient));
+  //          break;
+  //
+  //        // Stepping delay
+  //        case 'D':
+  //          respond(format2UHex(32));
+  //          break;
+  //
+  //        // Half-step
+  //        case 'H':
+  //          respond(format2UHex(isHalfStep ? 255 : 0));
+  //          break;
+  //
+  //        // Moving
+  //        case 'I':
+  //          respond(format2UHex(stepper.isRunning() ? 1 : 0));
+  //          break;
+  //
+  //        // New Position
+  //        case 'N':
+  //          respond(formatUHex(newMotorPosition));
+  //          break;
+  //
+  //        // Position
+  //        case 'P':
+  //          respond(formatUHex(stepper.currentPosition()));
+  //          break;
+  //
+  //        // Temperature
+  //        case 'T':
+  //          respond(formatFHex(dht.readTemperature()));
+  //          break;
+  //
+  //        // Version
+  //        case 'V':
+  //          respond(VERSION);
+  //          break;
+  //
+  //        // Error
+  //        default:
+  //          error(command);
+  //
+  //      }
+  //      break;
+  //
+  //    // Setter commands
+  //    case 'S':
+  //      switch (commandString.charAt(1)) {
+  //
+  //        // Temperature coefficient
+  //        case 'C':
+  //          temperatureCoefficient = parse2UHex(commandString.substring(2));
+  //          break;
+  //
+  //        // Stepping delay
+  //        case 'D':
+  //          // Ignored
+  //          break;
+  //
+  //        // Full-step mode
+  //        case 'F':
+  //          isHalfStep = false;
+  //          digitalWrite(HALF_STEP_PIN, HIGH);
+  //          break;
+  //
+  //        // Half-step mode
+  //        case 'H':
+  //          isHalfStep = true;
+  //          digitalWrite(HALF_STEP_PIN, HIGH);
+  //          break;
+  //
+  //        // New position
+  //        case 'N':
+  //          newMotorPosition = parseUHex(commandString.substring(2));
+  //          break;
+  //
+  //        // Current position
+  //        case 'P':
+  //          newMotorPosition = parseUHex(commandString.substring(2));
+  //          stepper.setCurrentPosition(newMotorPosition);
+  //          motorPosition = newMotorPosition; // Make sure everything points to the same number
+  //          break;
+  //
+  //        // Error
+  //        default:
+  //          error(command);
+  //      }
+  //      break;
+  //
+  //    // Activate Temperature Compensation Focusing
+  //    case '+':
+  //      break; // Not implemented
+  //
+  //    // Deactivate Temperature Compensation Focusing
+  //    case '-':
+  //      break; // Not implemented
+  //
+  //    case 'P':
+  //      break;
+  //
+  //    // Error
+  //    default:
+  //      error(command);
+  //  }
 }
 
 
-uint8_t parse2UHex(String theHexString) {
-  uint8_t i;
-  int strLen = theHexString.length() + 1;
-  char charBuffer[strLen];
-  theHexString.toCharArray(charBuffer, strLen);
-  sscanf(charBuffer, "%x", &i);
-  return i;
-}
-
-uint16_t parseUHex(String theHexString) {
-  uint16_t i;
-  int strLen = theHexString.length() + 1;
-  char charBuffer[strLen];
-  theHexString.toCharArray(charBuffer, strLen);
-  sscanf(charBuffer, "%x", &i);
-  return i;
-}
-
-/*
-   Format version number for moonlite
-*/
-String formatVersion(float theNumber) {
-  char buffer[3];
-  sprintf(buffer, "%1u%1u", int(theNumber), int((theNumber - int(theNumber)) * 10));
-  return String(buffer);
-}
-
-/*
-   Convert an unsigned 8 bit int to a hexidecimal string representation
-*/
-String format2UHex(uint8_t theNumber) {
-  char buffer[3];
-  sprintf(buffer, "%02X", theNumber);
-  return String(buffer);
-}
-
-/*
-   Convert an unsigned 16 bit int to a hexidecimal string representation
-*/
-String formatUHex(uint16_t theNumber) {
-  char buffer[5];
-  sprintf(buffer, "%04X", theNumber);
-  return String(buffer);
-}
-
-/*
-   Convert a float to a hexidecimal representation.
-*/
-String formatFHex(float theNumber) {
-  char buffer[5];
-  sprintf(buffer, "%04X", theNumber);
-  return String(buffer);
-}
 
 /*
    Determine if the encoder has moved this cycle. If so, make the adjustments
@@ -315,8 +393,7 @@ void interpretEncoder() {
   long newEncoderPosition = encoder.read();
   if (newEncoderPosition != encoderPosition) {                  // If there's any change from the previous read,
     long encoderChange = newEncoderPosition - encoderPosition;  // determine the difference,
-    newMotorPosition += encoderChange * getTurboMultiplier();   // calculate new stepper target
-    stepper.moveTo(newMotorPosition);                           // set the new target
+    stepper.moveTo(stepper.targetPosition() + encoderChange);                         // set the new target
   }
   encoderPosition = newEncoderPosition;                       // reset the encoder status
 }
@@ -332,11 +409,11 @@ uint16_t getTurboMultiplier() {
    Initialize the stepper motor.
 */
 void initializeStepper() {
-  stepper.setMaxSpeed(maxSpeed);
+  stepper.setMaxSpeed(speed);
   stepper.setAcceleration(accelRate);
   stepper.setCurrentPosition(motorPosition);
   pinMode(HALF_STEP_PIN, OUTPUT);
-  digitalWrite(HALF_STEP_PIN, isHalfStep ? HIGH : LOW);
+  //digitalWrite(HALF_STEP_PIN, isHalfStep ? HIGH : LOW);
   pinMode(ENABLE_PIN, OUTPUT);
   digitalWrite(ENABLE_PIN, LOW);
 }
