@@ -55,6 +55,7 @@
 
 // Version should match hardware response to make sure our protocol works.
 #define VERSION .9
+#define MAX_BUFFER 64
 
 class StupidDogFocuser : public INDI::Focuser {
 public:
@@ -76,13 +77,11 @@ protected:
     virtual bool SetFocuserSpeed(int speed) override;
 
 private:
-    int sendCommand(const char *cmd);
-    int readResponse(char *_resp);
+    int sendCommand(char *cmd, char *res);
     void GetFocusParams();
-
     int updateFocuserPosition(double *value);
     int updateFocuserTemperature(double *value);
-    int updateFocuserFirmware(char *_focuser_cmd);
+    int updateFocuserFirmware(char *_focuser_cmd, char *_focuser_reply);
     int updateFocuserPositionAbsolute(double value);
     int updateFocuserSetPosition(const double *value);
 
@@ -90,7 +89,9 @@ private:
     double targetPos{ 0};
     double simulatedTemperature{ 0};
     double simulatedPosition{ 0};
-
+    char commandBuffer[MAX_BUFFER];
+    char responseBuffer[MAX_BUFFER];
+    
     INumber TemperatureN[1];
     INumberVectorProperty TemperatureNP;
 
@@ -109,17 +110,8 @@ private:
     ISwitch Enabled[2];
 
     ISwitchVectorProperty EnabledSP;
-
-
-    //Connection::Serial *serialConnection{ nullptr };
-
-    // MyFocuserPro2 Buffer
-    static const uint8_t ML_RES{ 32};
-
-    // MyFocuserPro2 Delimeter
-    static const char ML_DEL{ 0xA};
-
+    
     // MyFocuserPro2 Timeout
-    static const uint8_t ML_TIMEOUT{ 3};
+    static const uint8_t ML_TIMEOUT{ 5};
 
 };
