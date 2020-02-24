@@ -76,7 +76,7 @@ uint8_t accelRate = speed / 8;
 uint8_t microstep = 1;
 bool enabled = true;
 bool reversed = false;
-int32_t lowLimit = -32768;
+int32_t lowLimit = -32768; // 32-bits for microstepping and heavily geared motors
 int32_t highLimit = 32767;
 
 char buffer[BUFFER_SIZE];
@@ -97,12 +97,8 @@ void setup() {
 }
 
 void output(String text){
-  //Serial.print("<");
-  //Serial.print(text);
-  //Serial.println(">");
   Serial.print(text);
-  Serial.println(">");
-  Serial.flush();
+  Serial.println("!");
 }
 /*
    Main loop. We need to call stepper.run() as frequently as possible so the motor doesn't stutter.
@@ -125,52 +121,8 @@ void loop() {
   interpretEncoder();
   stepper.run();
 
-
-  //  if (Serial.available() > 0) {
-  //    String theCommand = Serial.readStringUntil('\n');
-  //    theCommand.toCharArray(commandLine, BUFFER_SIZE);
-  //
-  //    interpretSerial(commandLine);
-  //  }
-
-
-
   motorPosition = stepper.currentPosition();
 }
-
-void readSerial() {
-  static boolean recvInProgress = false;
-  static byte ndx = 0;
-  char startMarker = '<';
-  char endMarker = '>';
-  char rc;
-
-  // if (Serial.available() > 0) {
-  while (Serial.available() > 0 && newData == false) {
-    rc = Serial.read();
-
-    if (recvInProgress == true) {
-      if (rc != endMarker) {
-        commandLine[ndx] = rc;
-        ndx++;
-        if (ndx >= BUFFER_SIZE) {
-          ndx = BUFFER_SIZE - 1;
-        }
-      }
-      else {
-        commandLine[ndx] = '\0'; // terminate the string
-        recvInProgress = false;
-        ndx = 0;
-        newData = true;
-      }
-    }
-
-    else if (rc == startMarker) {
-      recvInProgress = true;
-    }
-  }
-}
-
 
 /**
    Determine if a valid command has been received and act on it.
@@ -180,7 +132,6 @@ void interpretSerial() {
   if (newData) {
     int myInt = 0;
     double myDouble = 0.0;
-    float myFloat = 0.0;
 
     strcpy(buffer, commandLine);
 
@@ -229,7 +180,7 @@ void interpretSerial() {
 
     else if (strcmp(commandLine, GET_TEMPERATURE) == 0) {
       // because of some kind of Arduino bullshit, %f doesn't work the way it's supposed to
-      sprintf(buffer, SIGNED_RESPONSE, dht.readTemperature());
+      sprintf(buffer, SIGNED_RESPONSE, 33); //dht.readTemperature());
     }
 
     else if (strcmp(commandLine, GET_POSITION) == 0) {
@@ -272,6 +223,11 @@ void interpretSerial() {
     else if (sscanf(commandLine, RELATIVE_MOVE, &myInt) == 1 ) {
       stepper.moveTo(stepper.targetPosition() + myInt * reversed ? -1 : 1);
       sprintf(buffer, SIGNED_RESPONSE, stepper.targetPosition());
+    }
+
+    else if(sscanf(commandLine, SET_SPEED, &myInt) == 1 ) {
+      speed = myInt * 19;
+      sprintf(buffer, UNSIGNED_RESPONSE, (int)speed/19);
     }
 
     output(buffer);
@@ -427,6 +383,39 @@ void interpretSerial() {
     //    default:
     //      error(command);
     //  }
+  }
+}
+
+
+void readSerial() {
+  static boolean recvInProgress = false;
+  static byte ndx = 0;
+  char startMarker = '<';
+  char endMarker = '>';
+  char rc;
+
+  while (Serial.available() > 0 && newData == false) {
+    rc = Serial.read();
+
+    if (recvInProgress == true) {
+      if (rc != endMarker) {
+        commandLine[ndx] = rc;
+        ndx++;
+        if (ndx >= BUFFER_SIZE) {
+          ndx = BUFFER_SIZE - 1;
+        }
+      }
+      else {
+        commandLine[ndx] = '\0'; // terminate the string
+        recvInProgress = false;
+        ndx = 0;
+        newData = true;
+      }
+    }
+
+    else if (rc == startMarker) {
+      recvInProgress = true;
+    }
   }
 }
 
