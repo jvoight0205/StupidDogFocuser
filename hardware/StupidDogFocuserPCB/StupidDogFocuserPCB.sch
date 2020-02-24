@@ -104,7 +104,7 @@ A1
 Wire Wire Line
 	5800 2700 5900 2700
 Text GLabel 5800 2700 0    50   Input ~ 0
-HalfStep
+M0
 Wire Wire Line
 	5800 2300 5900 2300
 Text GLabel 5800 2300 0    50   Input ~ 0
@@ -130,7 +130,7 @@ DHT
 Text GLabel 2150 2950 0    50   Input ~ 0
 DHT
 Text GLabel 3350 2750 2    50   Input ~ 0
-HalfStep
+M0
 Text GLabel 2150 2450 0    50   Input ~ 0
 SW_A
 Text GLabel 2150 2350 0    50   Input ~ 0
@@ -529,8 +529,6 @@ NoConn ~ 3250 1950
 NoConn ~ 3250 2150
 NoConn ~ 3250 2350
 NoConn ~ 3250 2450
-NoConn ~ 3250 2550
-NoConn ~ 3250 2650
 NoConn ~ 3250 3050
 NoConn ~ 3250 3150
 NoConn ~ 2250 2850
@@ -540,10 +538,24 @@ NoConn ~ 2250 2550
 NoConn ~ 2250 2150
 NoConn ~ 2250 1850
 NoConn ~ 2250 1750
-NoConn ~ 5900 2800
-NoConn ~ 5900 2900
 NoConn ~ 5900 1900
 Wire Wire Line
 	2150 2950 2250 2950
 NoConn ~ 2250 3050
+Text GLabel 5800 2800 0    50   Input ~ 0
+M1
+Text GLabel 5800 2900 0    50   Input ~ 0
+M2
+Text GLabel 3350 2650 2    50   Input ~ 0
+M1
+Text GLabel 3350 2550 2    50   Input ~ 0
+M2
+Wire Wire Line
+	3350 2550 3250 2550
+Wire Wire Line
+	3250 2650 3350 2650
+Wire Wire Line
+	5800 2800 5900 2800
+Wire Wire Line
+	5900 2900 5800 2900
 $EndSCHEMATC
