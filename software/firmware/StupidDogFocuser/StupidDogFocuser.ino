@@ -70,6 +70,7 @@
 #define LONG_RESPONSE "%ld"
 #define FLOAT_RESPONSE "%f"
 #define GET_VERSION "VE"
+#define STATUS "ST"
 
 #define BUFFER_SIZE 15
 
@@ -78,14 +79,15 @@ int32_t motorPosition = 0; //
 
 // speed needs to map to 255 being the max
 uint16_t maxStepperSpeed = 1500; // 1500 for full stepping. 15000 for 1/16th stepping
-int indiSpeed = 255;
+uint16_t stepperSpeed = maxStepperSpeed; // Gets remapped for INDI
+int indiSpeed = 255; // INDI max speed
 uint16_t accelRate = 3000; // I've had excellent results with 3000
 uint8_t microstep = 1; // can only be multiples of 2
 bool enabled = true;
 bool reversed = false;
-int32_t lowLimit = -10800; // 2 full turns of a 17:1 geared 200 step stepper
-int32_t highLimit = 10800; // in both directions
-
+int32_t lowLimit = -999999999; // 10800 is 2 full turns of a 17:1 geared 200 step stepper
+int32_t highLimit = 999999999; // should be in both directions
+int32_t targetPosition = 0;
 char buffer[BUFFER_SIZE];
 char commandLine[BUFFER_SIZE];
 bool newData = false;
@@ -129,6 +131,8 @@ void loop() {
   stepper.run();
 
   motorPosition = stepper.currentPosition();
+
+  // TODO: Disable when not moving
 }
 
 /**
@@ -182,13 +186,12 @@ void interpretSerial() {
     }
 
     else if (strcmp(commandLine, GET_SPEED) == 0) {
-      int indiSpeed = map(stepper.speed(), 1, maxStepperSpeed, 1, 255);
       sprintf(buffer, UNSIGNED_RESPONSE, indiSpeed);
     }
 
     else if (strcmp(commandLine, GET_TEMPERATURE) == 0) {
       // because of some kind of Arduino bullshit, %f doesn't work the way it's supposed to
-      sprintf(buffer, SIGNED_RESPONSE, 33); //dht.readTemperature());
+      sprintf(buffer, SIGNED_RESPONSE, 33); //dht.readTemperature()); // TODO: Reconnect DHT.
     }
 
     else if (strcmp(commandLine, GET_POSITION) == 0) {
@@ -221,24 +224,36 @@ void interpretSerial() {
     }
 
     else if (sscanf(commandLine, SYNC_MOTOR, &myLong) == 1) {
-      stepper.setCurrentPosition(myLong);
+      long newPosition =  myLong * (reversed ? -1 : 1);
+      if (newPosition >= lowLimit && newPosition <= highLimit)
+        stepper.setCurrentPosition(myLong);
       sprintf(buffer, LONG_RESPONSE, stepper.currentPosition());
     }
 
     else if (sscanf(commandLine, ABSOLUTE_MOVE, &myLong) == 1 ) {
-      stepper.moveTo(myLong * (reversed ? -1 : 1));
+      long newPosition =  myLong * (reversed ? -1 : 1);
+      if (newPosition >= lowLimit && newPosition <= highLimit) {
+        targetPosition = newPosition;
+        stepper.moveTo(targetPosition);
+      }
       sprintf(buffer, LONG_RESPONSE, stepper.currentPosition());
     }
 
     else if (sscanf(commandLine, RELATIVE_MOVE, &myLong) == 1 ) {
-      stepper.moveTo(stepper.currentPosition() + myLong * (reversed ? -1 : 1));
+      long newPosition = targetPosition + myLong * (reversed ? -1 : 1);
+      if (newPosition >= lowLimit && newPosition <= highLimit) {
+        targetPosition = newPosition;
+        stepper.moveTo(targetPosition);
+      }
       sprintf(buffer, LONG_RESPONSE, stepper.currentPosition());
     }
 
     else if (sscanf(commandLine, SET_SPEED, &myLong) == 1 ) {
-      indiSpeed = myLong;
-      int stepperSpeed = map(myLong, 1, 255, 1, maxStepperSpeed);
-      stepper.setMaxSpeed(stepperSpeed);
+      if (myLong <= 255 ) {
+        indiSpeed = myLong;
+        stepperSpeed = map(indiSpeed, 1, 255, 1, maxStepperSpeed);
+        stepper.setMaxSpeed(stepperSpeed);
+      }
       sprintf(buffer, UNSIGNED_RESPONSE, indiSpeed);
     }
 
@@ -248,17 +263,18 @@ void interpretSerial() {
     }
 
     else if (sscanf(commandLine, SET_HIGH_LIMIT, &myLong) == 1 ) {
-      if (myLong < 999999999)
+      if (myLong <= 999999999)
         highLimit = myLong;
       sprintf(buffer, LONG_RESPONSE, highLimit);
     }
 
     else if (sscanf(commandLine, SET_LOW_LIMIT, &myLong) == 1 ) {
-      if (myLong > -999999999)
+      if (myLong >= -999999999)
         lowLimit = myLong;
       sprintf(buffer, LONG_RESPONSE, lowLimit);
     }
 
+   
     output(buffer);
     newData = false;
 
@@ -514,6 +530,7 @@ void setMicrostep(int ms) {
     default:
       break;
   }
+  // TODO: Speed multiplier when microstepped because the motor can handle the speeds when it microsteps.
   digitalWrite(M0_PIN, m0);
   digitalWrite(M1_PIN, m1);
   digitalWrite(M2_PIN, m2);
