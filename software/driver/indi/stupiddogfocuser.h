@@ -29,7 +29,6 @@
 #define IS_REVERSED "GR"
 #define GET_MICROSTEP "GM"
 #define GET_HIGH_LIMIT "GH"
-#define GET_LOW_LIMIT "GL"
 #define GET_SPEED "GS"
 #define GET_TEMPERATURE "GT"
 #define GET_POSITION "GP"
@@ -44,7 +43,6 @@
 #define SET_MICROSTEP "SM%u"
 #define SET_SPEED "SP%u"
 #define SET_HIGH_LIMIT "SH%ld"
-#define SET_LOW_LIMIT "SL%ld"
 #define TRUE_RESPONSE "T"
 #define FALSE_RESPONSE "F"
 #define SIGNED_RESPONSE "%d"
@@ -53,8 +51,10 @@
 #define FLOAT_RESPONSE "%f"
 #define GET_VERSION "VE"
 
+
 // Version should match hardware response to make sure our protocol works.
-#define VERSION .9
+#define VERSION ".9"
+
 #define MAX_BUFFER 64
 
 class StupidDogFocuser : public INDI::Focuser {
@@ -75,22 +75,40 @@ protected:
     virtual bool AbortFocuser() override;
     virtual bool SyncFocuser(uint32_t ticks) override;
     virtual bool SetFocuserSpeed(int speed) override;
+    virtual void TimerHit() override;
+
 
 private:
     int sendCommand(char *cmd, char *res);
     void GetFocusParams();
-    int updateFocuserPosition(double *value);
-    int updateFocuserTemperature(double *value);
-    int updateFocuserFirmware(char *_focuser_cmd, char *_focuser_reply);
-    int updateFocuserPositionAbsolute(double value);
-    int updateFocuserSetPosition(const double *value);
+    int readFocuserPosition();
+    int readFocuserTemperature();
+    int readFocuserSpeed();
+    int readFocuserMicrostep();
+    int readFocuserFirmware(char *_focuser_cmd, char *_focuser_reply);
+    int sendFocuserPositionAbsolute(uint32_t newTarget);
+    int sendFocuserSyncPosition(const double *newPosition);
+    int sendFocuserSpeed(int *speed);
+    int sendFocuserMicrostep(int *microstep);
+    int readFocuserMoving();
+    int sendFocuserEnable();
+    int sendFocuserDisable();
+    int sendFocuserHighLimit(double *highLimit);
+
 
     int timerID{ -1};
     double targetPos{ 0};
+    bool moving{false};
+    int8_t dir{1};
+    uint8_t microstep{1};
+    uint8_t speed{255};
     double simulatedTemperature{ 0};
     double simulatedPosition{ 0};
     char commandBuffer[MAX_BUFFER];
     char responseBuffer[MAX_BUFFER];
+
+    ILight MovingS[1];
+    ILightVectorProperty MovingSP;
     
     INumber TemperatureN[1];
     INumberVectorProperty TemperatureNP;
@@ -110,8 +128,10 @@ private:
     ISwitch Enabled[2];
 
     ISwitchVectorProperty EnabledSP;
-    
-    // MyFocuserPro2 Timeout
+
+    // Update status and perform maintenance every 2 seconds 
+
+    // Time for the arduino to boot up.
     static const uint8_t ML_TIMEOUT{ 5};
 
 };

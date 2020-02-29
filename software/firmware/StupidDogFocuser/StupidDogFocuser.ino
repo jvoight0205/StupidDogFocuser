@@ -47,7 +47,6 @@
 #define IS_REVERSED "GR"
 #define GET_MICROSTEP "GM"
 #define GET_HIGH_LIMIT "GH"
-#define GET_LOW_LIMIT "GL"
 #define GET_SPEED "GS"
 #define GET_TEMPERATURE "GT"
 #define GET_POSITION "GP"
@@ -62,7 +61,6 @@
 #define SET_MICROSTEP "SM%u"
 #define SET_SPEED "SP%u"
 #define SET_HIGH_LIMIT "SH%ld"
-#define SET_LOW_LIMIT "SL%ld"
 #define TRUE_RESPONSE "T"
 #define FALSE_RESPONSE "F"
 #define SIGNED_RESPONSE "%d"
@@ -70,12 +68,11 @@
 #define LONG_RESPONSE "%ld"
 #define FLOAT_RESPONSE "%f"
 #define GET_VERSION "VE"
-#define STATUS "ST"
 
 #define BUFFER_SIZE 15
 
 int16_t encoderPosition = 0; // Set to be incorrect on purpose so that it gets updated in setup.
-int32_t motorPosition = 0; //
+uint32_t motorPosition = 10800; // 10800 is 2 full turns of a 17:1 geared 200 step stepper
 
 // speed needs to map to 255 being the max
 uint16_t maxStepperSpeed = 1500; // 1500 for full stepping. 15000 for 1/16th stepping
@@ -85,9 +82,9 @@ uint16_t accelRate = 3000; // I've had excellent results with 3000
 uint8_t microstep = 1; // can only be multiples of 2
 bool enabled = true;
 bool reversed = false;
-int32_t lowLimit = -999999999; // 10800 is 2 full turns of a 17:1 geared 200 step stepper
-int32_t highLimit = 999999999; // should be in both directions
-int32_t targetPosition = 0;
+
+uint32_t highLimit = 108000; // 20 turns of a 17:1, somewhat less for 1/16th microstep
+uint32_t targetPosition = 0;
 char buffer[BUFFER_SIZE];
 char commandLine[BUFFER_SIZE];
 bool newData = false;
@@ -181,9 +178,6 @@ void interpretSerial() {
       sprintf(buffer, LONG_RESPONSE, highLimit);
     }
 
-    else if (strcmp(commandLine, GET_LOW_LIMIT) == 0) {
-      sprintf(buffer, LONG_RESPONSE, lowLimit);
-    }
 
     else if (strcmp(commandLine, GET_SPEED) == 0) {
       sprintf(buffer, UNSIGNED_RESPONSE, indiSpeed);
@@ -224,15 +218,15 @@ void interpretSerial() {
     }
 
     else if (sscanf(commandLine, SYNC_MOTOR, &myLong) == 1) {
-      long newPosition =  myLong * (reversed ? -1 : 1);
-      if (newPosition >= lowLimit && newPosition <= highLimit)
+      uint32_t newPosition =  myLong * (reversed ? -1 : 1);
+      if (newPosition <= highLimit)
         stepper.setCurrentPosition(myLong);
       sprintf(buffer, LONG_RESPONSE, stepper.currentPosition());
     }
 
     else if (sscanf(commandLine, ABSOLUTE_MOVE, &myLong) == 1 ) {
-      long newPosition =  myLong * (reversed ? -1 : 1);
-      if (newPosition >= lowLimit && newPosition <= highLimit) {
+      uint32_t newPosition =  myLong * (reversed ? -1 : 1);
+      if (newPosition <= highLimit) {
         targetPosition = newPosition;
         stepper.moveTo(targetPosition);
       }
@@ -240,8 +234,8 @@ void interpretSerial() {
     }
 
     else if (sscanf(commandLine, RELATIVE_MOVE, &myLong) == 1 ) {
-      long newPosition = targetPosition + myLong * (reversed ? -1 : 1);
-      if (newPosition >= lowLimit && newPosition <= highLimit) {
+      uint32_t newPosition = targetPosition + myLong * (reversed ? -1 : 1);
+      if (newPosition <= highLimit) {
         targetPosition = newPosition;
         stepper.moveTo(targetPosition);
       }
@@ -267,167 +261,9 @@ void interpretSerial() {
         highLimit = myLong;
       sprintf(buffer, LONG_RESPONSE, highLimit);
     }
-
-    else if (sscanf(commandLine, SET_LOW_LIMIT, &myLong) == 1 ) {
-      if (myLong >= -999999999)
-        lowLimit = myLong;
-      sprintf(buffer, LONG_RESPONSE, lowLimit);
-    }
-
    
     output(buffer);
     newData = false;
-
-
-    //Serial.print("dbg:'");Serial.print(command);Serial.println("'");
-
-    // Parse the command out from between the chars
-    //  String commandString = command.substring(1, command.length() - 1);
-    //
-    //  switch (commandString.charAt(0)) {
-    //
-    //    // Temperature Conversion. This probably isn't necessary
-    //    case 'C':
-    //      dht.read();
-    //      break;
-    //
-    //    // Feed Commands
-    //    case 'F':
-    //      switch (commandString.charAt(1)) {
-    //
-    //        // Go-to (move) to new set position
-    //        case 'G':
-    //          stepper.moveTo(newMotorPosition);
-    //          break;
-    //
-    //        // HALT movement
-    //        case 'Q':
-    //          stepper.stop();
-    //          while (stepper.isRunning()) { // Call run() as fast as possible to allow motor to halt as quickly as possible
-    //            for (int i = 0; i < 20; i++) { // Can go even faster to halt if we take a bunch of steps between isRunning calls.
-    //              stepper.run();
-    //            }
-    //          }
-    //          motorPosition = stepper.currentPosition();
-    //          newMotorPosition = motorPosition; // Make sure we don't take off again.
-    //          break;
-    //
-    //        // Error
-    //        default:
-    //          error(command);
-    //      }
-    //      break;
-    //
-    //    // Getter Commands
-    //    case 'G':
-    //      switch (commandString.charAt(1)) {
-    //
-    //        // Temperature coefficient
-    //        case 'C':
-    //          respond(format2UHex(temperatureCoefficient));
-    //          break;
-    //
-    //        // Stepping delay
-    //        case 'D':
-    //          respond(format2UHex(32));
-    //          break;
-    //
-    //        // Half-step
-    //        case 'H':
-    //          respond(format2UHex(isHalfStep ? 255 : 0));
-    //          break;
-    //
-    //        // Moving
-    //        case 'I':
-    //          respond(format2UHex(stepper.isRunning() ? 1 : 0));
-    //          break;
-    //
-    //        // New Position
-    //        case 'N':
-    //          respond(formatUHex(newMotorPosition));
-    //          break;
-    //
-    //        // Position
-    //        case 'P':
-    //          respond(formatUHex(stepper.currentPosition()));
-    //          break;
-    //
-    //        // Temperature
-    //        case 'T':
-    //          respond(formatFHex(dht.readTemperature()));
-    //          break;
-    //
-    //        // Version
-    //        case 'V':
-    //          respond(VERSION);
-    //          break;
-    //
-    //        // Error
-    //        default:
-    //          error(command);
-    //
-    //      }
-    //      break;
-    //
-    //    // Setter commands
-    //    case 'S':
-    //      switch (commandString.charAt(1)) {
-    //
-    //        // Temperature coefficient
-    //        case 'C':
-    //          temperatureCoefficient = parse2UHex(commandString.substring(2));
-    //          break;
-    //
-    //        // Stepping delay
-    //        case 'D':
-    //          // Ignored
-    //          break;
-    //
-    //        // Full-step mode
-    //        case 'F':
-    //          isHalfStep = false;
-    //          digitalWrite(HALF_STEP_PIN, HIGH);
-    //          break;
-    //
-    //        // Half-step mode
-    //        case 'H':
-    //          isHalfStep = true;
-    //          digitalWrite(HALF_STEP_PIN, HIGH);
-    //          break;
-    //
-    //        // New position
-    //        case 'N':
-    //          newMotorPosition = parseUHex(commandString.substring(2));
-    //          break;
-    //
-    //        // Current position
-    //        case 'P':
-    //          newMotorPosition = parseUHex(commandString.substring(2));
-    //          stepper.setCurrentPosition(newMotorPosition);
-    //          motorPosition = newMotorPosition; // Make sure everything points to the same number
-    //          break;
-    //
-    //        // Error
-    //        default:
-    //          error(command);
-    //      }
-    //      break;
-    //
-    //    // Activate Temperature Compensation Focusing
-    //    case '+':
-    //      break; // Not implemented
-    //
-    //    // Deactivate Temperature Compensation Focusing
-    //    case '-':
-    //      break; // Not implemented
-    //
-    //    case 'P':
-    //      break;
-    //
-    //    // Error
-    //    default:
-    //      error(command);
-    //  }
   }
 }
 
@@ -447,7 +283,7 @@ void readSerial() {
         commandLine[ndx] = rc;
         ndx++;
         if (ndx >= BUFFER_SIZE) {
-          ndx = BUFFER_SIZE - 1;
+          ndx = BUFFER_SIZE - 1; // keeps the buffer from overflowing
         }
       }
       else {
