@@ -141,7 +141,7 @@ void interpretSerial() {
     long myLong = 0;
     double myDouble = 0.0;
 
-    strcpy(buffer, commandLine);
+    strcpy(buffer, "              ");
 
     if (strcmp(commandLine, HALT) == 0) {
       stepper.stop();

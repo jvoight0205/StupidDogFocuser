@@ -64,6 +64,7 @@ public:
 
     virtual bool ISNewNumber(const char *dev, const char *name, double values[], char *names[], int n) override;
     virtual bool ISNewSwitch(const char *dev, const char *name, ISState *states, char *names[], int n) override;
+    bool SetFocuserMicrostep(int _microstep);
 
 protected:
     virtual bool Handshake() override;
@@ -76,6 +77,7 @@ protected:
     virtual bool SyncFocuser(uint32_t ticks) override;
     virtual bool SetFocuserSpeed(int speed) override;
     virtual void TimerHit() override;
+
 
 
 private:
@@ -96,6 +98,7 @@ private:
     int sendFocuserHighLimit(double *highLimit);
 
 
+
     int timerID{ -1};
     double targetPos{ 0};
     bool moving{false};
@@ -107,14 +110,14 @@ private:
     char commandBuffer[MAX_BUFFER];
     char responseBuffer[MAX_BUFFER];
 
-    ILight MovingS[1];
-    ILightVectorProperty MovingSP;
+    ILight MovingL[1];
+    ILightVectorProperty MovingLP;
     
     INumber TemperatureN[1];
     INumberVectorProperty TemperatureNP;
 
-    INumber MinMaxPositionN[2];
-    INumberVectorProperty MinMaxPositionNP;
+    INumber FocuserRangeN[1];
+    INumberVectorProperty FocuserRangeNP;
 
     INumber SpeedN[1];
     INumberVectorProperty SpeedNP;
