@@ -26,6 +26,9 @@
 #define STEP_PIN 2
 #define DIR_PIN 3
 #define ENABLE_PIN A5
+#define M0_PIN A4
+#define M1_PIN A3
+#define M2_PIN A2
 #define ENC_A 5
 #define ENC_B 6
 #define TURBO_PIN 7
@@ -33,6 +36,7 @@
 #define DHT_PIN 12
 #define VERSION ".9"
 #define TURBO_MULTIPLIER 200
+
 
 #define DHTTYPE DHT11
 //#define DHTTYPE DHT22
@@ -48,36 +52,39 @@
 #define GET_TEMPERATURE "GT"
 #define GET_POSITION "GP"
 #define IS_MOVING "GV"
-#define ABSOLUTE_MOVE "AM%d"
-#define RELATIVE_MOVE "RM%d"
+#define ABSOLUTE_MOVE "AM%ld"
+#define RELATIVE_MOVE "RM%ld"
 #define REVERSE_DIR "RD"
 #define FORWARD_DIR "FD"
-#define SYNC_MOTOR "SY%d"
+#define SYNC_MOTOR "SY%ld"
 #define ENABLE_MOTOR "EN"
 #define DISABLE_MOTOR "DI"
 #define SET_MICROSTEP "SM%u"
 #define SET_SPEED "SP%u"
-#define SET_HIGH_LIMIT "SH%d"
-#define SET_LOW_LIMIT "SL%d"
+#define SET_HIGH_LIMIT "SH%ld"
+#define SET_LOW_LIMIT "SL%ld"
 #define TRUE_RESPONSE "T"
 #define FALSE_RESPONSE "F"
 #define SIGNED_RESPONSE "%d"
 #define UNSIGNED_RESPONSE "%u"
+#define LONG_RESPONSE "%ld"
 #define FLOAT_RESPONSE "%f"
 #define GET_VERSION "VE"
 
-#define BUFFER_SIZE 10
+#define BUFFER_SIZE 15
 
 int16_t encoderPosition = 0; // Set to be incorrect on purpose so that it gets updated in setup.
 int32_t motorPosition = 0; //
 
-uint16_t speed = 1000;
-uint8_t accelRate = speed / 8;
-uint8_t microstep = 1;
+// speed needs to map to 255 being the max
+uint16_t maxStepperSpeed = 1500; // 1500 for full stepping. 15000 for 1/16th stepping
+int indiSpeed = 255;
+uint16_t accelRate = 3000; // I've had excellent results with 3000
+uint8_t microstep = 1; // can only be multiples of 2
 bool enabled = true;
 bool reversed = false;
-int32_t lowLimit = -32768; // 32-bits for microstepping and heavily geared motors
-int32_t highLimit = 32767;
+int32_t lowLimit = -10800; // 2 full turns of a 17:1 geared 200 step stepper
+int32_t highLimit = 10800; // in both directions
 
 char buffer[BUFFER_SIZE];
 char commandLine[BUFFER_SIZE];
@@ -96,7 +103,7 @@ void setup() {
   output(VERSION);
 }
 
-void output(String text){
+void output(String text) {
   Serial.print(text);
   Serial.println("!");
 }
@@ -130,7 +137,7 @@ void loop() {
 */
 void interpretSerial() {
   if (newData) {
-    int myInt = 0;
+    long myLong = 0;
     double myDouble = 0.0;
 
     strcpy(buffer, commandLine);
@@ -138,11 +145,12 @@ void interpretSerial() {
     if (strcmp(commandLine, HALT) == 0) {
       stepper.stop();
       while (stepper.isRunning()) { // Call run() as fast as possible to allow motor to halt as quickly as possible
-        for (int i = 0; i < 20; i++) { // Can go even faster to halt if we take a bunch of steps between isRunning calls.
+        for (int i = 0; i < 10; i++) { // Can go even faster to halt if we take a bunch of steps between isRunning calls.
           stepper.run();
         }
       }
-      strcpy(buffer, HALT);
+      long currentPosition = stepper.currentPosition();
+      sprintf(buffer, LONG_RESPONSE, currentPosition);
     }
 
     else if (strcmp(commandLine, IS_ENABLED) == 0) {
@@ -166,16 +174,16 @@ void interpretSerial() {
     }
 
     else if (strcmp(commandLine, GET_HIGH_LIMIT) == 0) {
-      sprintf(buffer, SIGNED_RESPONSE, highLimit);
+      sprintf(buffer, LONG_RESPONSE, highLimit);
     }
 
     else if (strcmp(commandLine, GET_LOW_LIMIT) == 0) {
-      sprintf(buffer, SIGNED_RESPONSE, lowLimit);
+      sprintf(buffer, LONG_RESPONSE, lowLimit);
     }
 
     else if (strcmp(commandLine, GET_SPEED) == 0) {
-      int speed = stepper.speed();
-      sprintf(buffer, UNSIGNED_RESPONSE, speed);
+      int indiSpeed = map(stepper.speed(), 1, maxStepperSpeed, 1, 255);
+      sprintf(buffer, UNSIGNED_RESPONSE, indiSpeed);
     }
 
     else if (strcmp(commandLine, GET_TEMPERATURE) == 0) {
@@ -184,19 +192,21 @@ void interpretSerial() {
     }
 
     else if (strcmp(commandLine, GET_POSITION) == 0) {
-      int currentPosition = stepper.currentPosition();
-      sprintf(buffer, SIGNED_RESPONSE, currentPosition);
+      long currentPosition = stepper.currentPosition();
+      sprintf(buffer, LONG_RESPONSE, currentPosition);
     }
 
     else if (strcmp(commandLine, ENABLE_MOTOR) == 0) {
       enabled = true;
       stepper.enableOutputs();
+      digitalWrite(ENABLE_PIN, LOW);
       strcpy(buffer, enabled ? TRUE_RESPONSE : FALSE_RESPONSE);
     }
 
     else if (strcmp(commandLine, DISABLE_MOTOR) == 0) {
       enabled = false;
       stepper.disableOutputs();
+      digitalWrite(ENABLE_PIN, HIGH);
       strcpy(buffer, enabled ? TRUE_RESPONSE : FALSE_RESPONSE);
     }
 
@@ -210,24 +220,43 @@ void interpretSerial() {
       strcpy(buffer, reversed ? REVERSE_DIR : FORWARD_DIR);
     }
 
-    else if (sscanf(commandLine, SYNC_MOTOR, &myInt) == 1) {
-      stepper.setCurrentPosition(myInt);
-      sprintf(buffer, SIGNED_RESPONSE, stepper.currentPosition());
+    else if (sscanf(commandLine, SYNC_MOTOR, &myLong) == 1) {
+      stepper.setCurrentPosition(myLong);
+      sprintf(buffer, LONG_RESPONSE, stepper.currentPosition());
     }
 
-    else if (sscanf(commandLine, ABSOLUTE_MOVE, &myInt) == 1 ) {
-      stepper.moveTo(myInt);
-      sprintf(buffer, SIGNED_RESPONSE, stepper.targetPosition());
+    else if (sscanf(commandLine, ABSOLUTE_MOVE, &myLong) == 1 ) {
+      stepper.moveTo(myLong * (reversed ? -1 : 1));
+      sprintf(buffer, LONG_RESPONSE, stepper.currentPosition());
     }
 
-    else if (sscanf(commandLine, RELATIVE_MOVE, &myInt) == 1 ) {
-      stepper.moveTo(stepper.targetPosition() + myInt * reversed ? -1 : 1);
-      sprintf(buffer, SIGNED_RESPONSE, stepper.targetPosition());
+    else if (sscanf(commandLine, RELATIVE_MOVE, &myLong) == 1 ) {
+      stepper.moveTo(stepper.currentPosition() + myLong * (reversed ? -1 : 1));
+      sprintf(buffer, LONG_RESPONSE, stepper.currentPosition());
     }
 
-    else if(sscanf(commandLine, SET_SPEED, &myInt) == 1 ) {
-      speed = myInt * 19;
-      sprintf(buffer, UNSIGNED_RESPONSE, (int)speed/19);
+    else if (sscanf(commandLine, SET_SPEED, &myLong) == 1 ) {
+      indiSpeed = myLong;
+      int stepperSpeed = map(myLong, 1, 255, 1, maxStepperSpeed);
+      stepper.setMaxSpeed(stepperSpeed);
+      sprintf(buffer, UNSIGNED_RESPONSE, indiSpeed);
+    }
+
+    else if (sscanf(commandLine, SET_MICROSTEP, &myLong) == 1 ) {
+      setMicrostep((int)myLong);
+      sprintf(buffer, UNSIGNED_RESPONSE, microstep);
+    }
+
+    else if (sscanf(commandLine, SET_HIGH_LIMIT, &myLong) == 1 ) {
+      if (myLong < 999999999)
+        highLimit = myLong;
+      sprintf(buffer, LONG_RESPONSE, highLimit);
+    }
+
+    else if (sscanf(commandLine, SET_LOW_LIMIT, &myLong) == 1 ) {
+      if (myLong > -999999999)
+        lowLimit = myLong;
+      sprintf(buffer, LONG_RESPONSE, lowLimit);
     }
 
     output(buffer);
@@ -445,20 +474,55 @@ uint16_t getTurboMultiplier() {
    Initialize the stepper motor.
 */
 void initializeStepper() {
-  stepper.setMaxSpeed(speed);
+  stepper.setMaxSpeed(map(indiSpeed, 1, 255, 1, maxStepperSpeed));
   stepper.setAcceleration(accelRate);
   stepper.setCurrentPosition(motorPosition);
-  pinMode(HALF_STEP_PIN, OUTPUT);
-  //digitalWrite(HALF_STEP_PIN, isHalfStep ? HIGH : LOW);
   pinMode(ENABLE_PIN, OUTPUT);
   digitalWrite(ENABLE_PIN, LOW);
+  pinMode(M0_PIN, OUTPUT);
+  pinMode(M1_PIN, OUTPUT);
+  pinMode(M2_PIN, OUTPUT);
+  setMicrostep(microstep);
 }
 
+void setMicrostep(int ms) {
+  uint8_t m0 = LOW, m1 = LOW, m2 = LOW;
+  switch (ms) {
+    case 1:
+      microstep = 1;
+      break;
+    case 2:
+      microstep = 2;
+      m0 = HIGH;
+      break;
+    case 4:
+      microstep = 4;
+      m1 = HIGH;
+      break;
+    case 8:
+      microstep = 8;
+      m0 = HIGH; m1 = HIGH;
+      break;
+    case 16:
+      microstep = 16;
+      m2 = HIGH;
+      break;
+    case 32:
+      microstep = 32;
+      m0 = HIGH; m2 = HIGH;
+      break;
+    default:
+      break;
+  }
+  digitalWrite(M0_PIN, m0);
+  digitalWrite(M1_PIN, m1);
+  digitalWrite(M2_PIN, m2);
+}
 /*
    Initialize the encoder. For now, just the turbo button
 */
 void initializeEncoder() {
-  pinMode(TURBO_PIN, INPUT_PULLUP);
+  pinMode(TURBO_PIN, INPUT);
 }
 
 /*
