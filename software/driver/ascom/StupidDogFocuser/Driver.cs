@@ -26,6 +26,33 @@
 // unused code canbe deleted and this definition removed.
 #define Focuser
 
+//#define HALT "HA"
+//#define IS_ENABLED "GE"
+//#define IS_REVERSED "GR"
+//#define GET_MICROSTEP "GM"
+//#define GET_HIGH_LIMIT "GH"
+//#define GET_SPEED "GS"
+//#define GET_TEMPERATURE "GT"
+//#define GET_POSITION "GP"
+//#define IS_MOVING "GV"
+//#define ABSOLUTE_MOVE "AM%ld"
+//#define RELATIVE_MOVE "RM%ld"
+//#define REVERSE_DIR "RD"
+//#define FORWARD_DIR "FD"
+//#define SYNC_MOTOR "SY%ld"
+//#define ENABLE_MOTOR "EN"
+//#define DISABLE_MOTOR "DI"
+//#define SET_MICROSTEP "SM%u"
+//#define SET_SPEED "SP%u"
+//#define SET_HIGH_LIMIT "SH%ld"
+//#define TRUE_RESPONSE "T"
+//#define FALSE_RESPONSE "F"
+//#define SIGNED_RESPONSE "%d"
+//#define UNSIGNED_RESPONSE "%u"
+//#define LONG_RESPONSE "%ld"
+//#define FLOAT_RESPONSE "%f"
+//#define GET_VERSION "VE"
+
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -77,11 +104,13 @@ namespace ASCOM.StupidDog
         internal static string traceStateDefault = "false";
 
         internal static string comPort; // Variables to hold the currrent device configuration
+        private ASCOM.Utilities.Serial objSerial;
 
         /// <summary>
         /// Private variable to hold the connected state
         /// </summary>
         private bool connectedState;
+        private bool tempComp;
 
         /// <summary>
         /// Private variable to hold an ASCOM Utilities object
@@ -167,29 +196,26 @@ namespace ASCOM.StupidDog
             CheckConnected("CommandBlind");
             // Call CommandString and return as soon as it finishes
             this.CommandString(command, raw);
-            // or
-            throw new ASCOM.MethodNotImplementedException("CommandBlind");
-            // DO NOT have both these sections!  One or the other
         }
 
         public bool CommandBool(string command, bool raw)
         {
             CheckConnected("CommandBool");
             string ret = CommandString(command, raw);
-            // TODO decode the return string and return true or false
-            // or
-            throw new ASCOM.MethodNotImplementedException("CommandBool");
-            // DO NOT have both these sections!  One or the other
+            ret = ret.Replace(TERMINATOR, "").ToLower();
+
+            return ret.Equals("T");
         }
 
         public string CommandString(string command, bool raw)
         {
             CheckConnected("CommandString");
-            // it's a good idea to put all the low level communication with the device here,
-            // then all communication calls this function
-            // you need something to ensure that only one command is in progress at a time
-
-            throw new ASCOM.MethodNotImplementedException("CommandString");
+            tl.LogMessage(command, true.ToString());
+            objSerial.Transmit("<"+command+">");
+            String s = objSerial.ReceiveTerminated(TERMINATOR);
+            s = s.Replace(TERMINATOR, "");
+            tl.LogMessage("Received message", s);
+            return s;
         }
 
         public void Dispose()
@@ -221,10 +247,22 @@ namespace ASCOM.StupidDog
                 {
                     connectedState = true;
                     LogMessage("Connected Set", "Connecting to port {0}", comPort);
-                    // TODO connect to the device
+                    objSerial = new ASCOM.Utilities.Serial();
+                    objSerial.Port = int.Parse(comPort.Substring(3));
+
+                    objSerial.Speed = ASCOM.Utilities.SerialSpeed.ps115200;
+                    objSerial.Connected = true;
+
+                    String s = objSerial.ReceiveTerminated(TERMINATOR);
+                    tl.LogMessage("Starting with ", s);
                 }
                 else
                 {
+                    if (connectedState)
+                    {
+                        String s = CommandString("HA", true); ;
+                        tl.LogMessage("Halt", s);
+                    }
                     connectedState = false;
                     LogMessage("Connected Set", "Disconnecting from port {0}", comPort);
                     // TODO disconnect from the device
@@ -279,7 +317,7 @@ namespace ASCOM.StupidDog
         {
             get
             {
-                string name = "Short driver name - please customise";
+                string name = "StupidDog Focuser";
                 tl.LogMessage("Name Get", name);
                 return name;
             }
@@ -289,8 +327,9 @@ namespace ASCOM.StupidDog
 
         #region IFocuser Implementation
 
-        private int focuserPosition = 0; // Class level variable to hold the current focuser position
-        private const int focuserSteps = 10000;
+        private int focuserPosition = 10800; // Two full rotations of a 5400 stepper counts as the center start point.
+        private const int focuserSteps = 108000; // Ten full rotations.
+        private readonly string TERMINATOR ="!";
 
         public bool Absolute
         {
@@ -303,16 +342,21 @@ namespace ASCOM.StupidDog
 
         public void Halt()
         {
-            tl.LogMessage("Halt", "Not implemented");
-            throw new ASCOM.MethodNotImplementedException("Halt");
+            tl.LogMessage("HALT!", true.ToString());
+            String s = CommandString("HA", true);
+            tl.LogMessage("Received message", s);
+            tl.LogMessage("Halt", s);
+            focuserPosition = int.Parse(s);
         }
 
         public bool IsMoving
         {
             get
             {
-                tl.LogMessage("IsMoving Get", false.ToString());
-                return false; // This focuser always moves instantaneously so no need for IsMoving ever to be True
+                tl.LogMessage("Testing moving.", true.ToString());
+                String s = CommandString("GV", true);
+                tl.LogMessage("IsMoving Get", s);
+                return s.Equals("T");
             }
         }
 
@@ -348,17 +392,25 @@ namespace ASCOM.StupidDog
             }
         }
 
-        public void Move(int Position)
+        public void Move(int newPosition)
         {
-            tl.LogMessage("Move", Position.ToString());
+            tl.LogMessage("Move", newPosition.ToString());
+            String s = CommandString("AM" + Position, true);
             focuserPosition = Position; // Set the focuser position
+            tl.LogMessage("Moved (to)", Position.ToString());
         }
 
         public int Position
         {
             get
             {
-                return focuserPosition; // Return the focuser position
+                tl.LogMessage("Retrieving Position.", true.ToString());
+                String s = CommandString("GP", true);
+                tl.LogMessage("Retrived:", s);
+                focuserPosition = int.Parse(s);
+                tl.LogMessage("Position", focuserPosition.ToString());
+
+                return focuserPosition; // Return the focuser position            }
             }
         }
 
@@ -398,8 +450,9 @@ namespace ASCOM.StupidDog
         {
             get
             {
-                tl.LogMessage("Temperature Get", "Not implemented");
-                throw new ASCOM.PropertyNotImplementedException("Temperature", false);
+                String s = CommandString("GT", true);
+                tl.LogMessage("Temperature Get", s);
+                return double.Parse(s);
             }
         }
 

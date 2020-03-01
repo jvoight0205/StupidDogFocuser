@@ -8,11 +8,11 @@ using System.Runtime.InteropServices;
 //
 // TODO - Add your authorship information here
 [assembly: AssemblyTitle("ASCOM.StupidDog.Focuser")]
-[assembly: AssemblyDescription("ASCOM Focuser driver for StupidDog")]
+[assembly: AssemblyDescription("ASCOM Focuser driver for StupidDogFocuser")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("The ASCOM Initiative")]
-[assembly: AssemblyProduct("ASCOM Focuser driver for StupidDog")]
-[assembly: AssemblyCopyright("Copyright © 2020 The ASCOM Initiative")]
+[assembly: AssemblyCompany("Stupid Dog Observatory")]
+[assembly: AssemblyProduct("ASCOM Focuser driver for StupidDogFocuser")]
+[assembly: AssemblyCopyright("Copyright © 2020 Jeffrey Voight")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
