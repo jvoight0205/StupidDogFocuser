@@ -36,3 +36,5 @@ indi_stupiddogfocuser
 /software/driver/indi/nbproject/private/cpp_standard_headers_indexer.cpp
 /software/driver/indi/nbproject/private/Default-exec.log
 *rescue*
+/software/driver/ascom/StupidDogFocuser/.vs/StupidDogFocuser/v14
+/software/driver/ascom/StupidDogFocuser/obj/Debug
