@@ -91,6 +91,15 @@ StupidDogFocuser::StupidDogFocuser() {
 bool StupidDogFocuser::initProperties() {
     INDI::Focuser::initProperties();
 
+
+    IUFillSwitch(&MicrostepModeS[M32], "M32", "1/32 Step", ISS_OFF);
+    IUFillSwitch(&MicrostepModeS[M16], "M16", "1/16 Step", ISS_OFF);
+    IUFillSwitch(&MicrostepModeS[M8], "M8", "1/8 Step", ISS_OFF);
+    IUFillSwitch(&MicrostepModeS[M4], "M4", "1/4 Step", ISS_OFF);
+    IUFillSwitch(&MicrostepModeS[M2], "M2", "1/2 Step", ISS_OFF);
+    IUFillSwitch(&MicrostepModeS[M1], "M1", "Full Step", ISS_ON);
+    IUFillSwitchVector(&MicrostepModeSP, MicrostepModeS, 9, getDeviceName(), "Microstep Mode", "", OPTIONS_TAB, IP_RW, ISR_1OFMANY, 0, IPS_IDLE);
+
     IUFillLight(&MovingL[0], "Is Moving", "", IPS_IDLE);
     IUFillLightVector(&MovingLP, MovingL, 1, getDeviceName(), "MOVING", "Moving",
             MAIN_CONTROL_TAB, IPS_OK);
@@ -105,11 +114,6 @@ bool StupidDogFocuser::initProperties() {
     IUFillSwitch(&Enabled[1], "DISABLE", "Disable", ISS_OFF);
     IUFillSwitchVector(&EnabledSP, Enabled, 2, getDeviceName(), "ENABLE", "Motor Power",
             SETTINGS_TAB, IP_RW, ISR_1OFMANY, 0, IPS_IDLE);
-
-    // Microstep
-    IUFillNumber(&MicrostepN[0], "MICROSTEP", "Microstep", "%u", 1, 32, 0, 1);
-    IUFillNumberVector(&MicrostepNP, MicrostepN, 1, getDeviceName(), "MICROSTEP", "Microstep",
-            MAIN_CONTROL_TAB, IP_RW, 0, IPS_IDLE);
 
     FocusSpeedN[0].value = 255;
     /* Relative and absolute movemennt */
@@ -134,11 +138,8 @@ bool StupidDogFocuser::updateProperties() {
     if (isConnected()) {
         defineLight(&MovingLP);
         defineNumber(&TemperatureNP);
-        //        defineNumber(&FocuserRangeNP);
-        defineNumber(&MicrostepNP);
-        //        defineNumber(&SpeedNP);
+        defineSwitch(&MicrostepModeSP);
         defineSwitch(&EnabledSP);
-        //        defineSwitch(&ReversedSP);
 
         GetFocusParams();
         LOG_DEBUG("StupidDogFocuser parameters readout complete, focuser ready for use.");
@@ -146,11 +147,8 @@ bool StupidDogFocuser::updateProperties() {
 
         deleteProperty(MovingLP.name);
         deleteProperty(TemperatureNP.name);
-        //        deleteProperty(FocuserRangeNP.name);
-        deleteProperty(MicrostepNP.name);
-        //        deleteProperty(SpeedNP.name);
+        deleteProperty(MicrostepModeSP.name);
         deleteProperty(EnabledSP.name);
-        //        deleteProperty(ReversedSP.name);
 
         LOG_DEBUG("StupidDogFocuser parameters cleared.");
     }
@@ -338,7 +336,7 @@ int StupidDogFocuser::readFocuserSpeed() {
 int StupidDogFocuser::readFocuserMicrostep() {
     LOG_DEBUG("Reading Microstep");
     if (isSimulation()) {
-        MicrostepN[0].value = 1;
+        MicrostepModeS[0].s = ISS_ON;
         return 0;
     }
 
@@ -357,8 +355,29 @@ int StupidDogFocuser::readFocuserMicrostep() {
     if (sscanf(focuser_reply, UNSIGNED_RESPONSE, &temp) < 1)
         return -1;
 
-    MicrostepN[0].value = temp;
-    LOGF_INFO("Microstep: 1/%d", temp);
+    switch (temp) {
+        case 1:
+            MicrostepModeS[M1].s = ISS_ON;
+            break;
+        case 2:
+            MicrostepModeS[M2].s = ISS_ON;
+            break;
+        case 4:
+            MicrostepModeS[M4].s = ISS_ON;
+            break;
+        case 8:
+            MicrostepModeS[M8].s = ISS_ON;
+            break;
+        case 16:
+            MicrostepModeS[M16].s = ISS_ON;
+            break;
+        case 32:
+            MicrostepModeS[M32].s = ISS_ON;
+            break;
+        default:
+            //No change
+            break;
+    }
 
     return 0;
 }
@@ -463,11 +482,10 @@ bool StupidDogFocuser::SetFocuserMicrostep(int _microstep) {
     int ret_read_tmp;
     if (_microstep != 1 && _microstep != 2 && _microstep != 4 && _microstep != 8 && _microstep != 16 && _microstep != 32) {
         LOGF_ERROR("Unable to set microstep to %d.", _microstep);
-        MicrostepNP.s = IPS_ALERT;
+        MicrostepModeSP.s = IPS_ALERT;
         return false;
     }
     if (isSimulation()) {
-        MicrostepN[1].value = _microstep;
         return true;
     }
 
@@ -481,26 +499,77 @@ bool StupidDogFocuser::SetFocuserMicrostep(int _microstep) {
     if (sscanf(focuser_reply, UNSIGNED_RESPONSE, &ret_read_tmp) < 1)
         return false;
 
-    MicrostepN[1].value = ret_read_tmp;
-
     return true;
 }
 
-void ISNewText(const char *dev, const char *name, char *texts[], char *names[], int n) {
+/*
+ * If the user changes a text element, make sure that we notify the instance.
+ */
 
+void ISNewText(const char *dev, const char *name, char *texts[], char *names[], int n) {
     stupidDogFocuser->ISNewText(dev, name, texts, names, n);
 }
 
+/*
+ * If the user changes a switch, make sure that we notify the instance
+ */
 bool StupidDogFocuser::ISNewSwitch(const char *dev, const char *name, ISState *states, char *names[], int n) {
+    // Focus Step Mode
+    if (strcmp(MicrostepModeSP.name, name) == 0) {
+        int current_mode = IUFindOnSwitchIndex(&MicrostepModeSP);
+        int new_mode = current_mode;
+        
+        IUUpdateSwitch(&MicrostepModeSP, states, names, n);
 
+        int target_mode = IUFindOnSwitchIndex(&MicrostepModeSP);
+
+        if (current_mode == target_mode) {
+            MicrostepModeSP.s = IPS_OK;
+            IDSetSwitch(&MicrostepModeSP, nullptr);
+            return true;
+        }
+
+        switch(target_mode){
+            case 0:
+                new_mode = 1;
+                break;
+            case 1:
+                new_mode = 2;
+                break;
+            case 2:
+                new_mode = 4;
+                break;
+            case 3:
+                new_mode = 8;
+                break;
+            case 4:
+                new_mode = 16;
+                break;
+            case 5:
+                new_mode = 32;
+                break;
+            default:
+                new_mode = -1;
+        }
+
+        if (new_mode == -1 || !SetFocuserMicrostep(new_mode)) {
+            IUResetSwitch(&MicrostepModeSP);
+            MicrostepModeS[current_mode].s = ISS_ON;
+            MicrostepModeSP.s = IPS_ALERT;
+            IDSetSwitch(&MicrostepModeSP, nullptr);
+        }
+        
+        MicrostepModeSP.s = IPS_OK;
+        IDSetSwitch(&MicrostepModeSP, nullptr);
+        return true;
+    }
     return INDI::Focuser::ISNewSwitch(dev, name, states, names, n);
 }
 
+/*
+ * If the user changes a number or slider, make sure that we notify the instance
+ */
 bool StupidDogFocuser::ISNewNumber(const char *dev, const char *name, double values[], char *names[], int n) {
-    if (strcmp("MICROSTEP", name) == 0) {
-        LOGF_ERROR("Attempting to set microstep to %d.", values[0]);
-        SetFocuserMicrostep(values[0]);
-    }
     return INDI::Focuser::ISNewNumber(dev, name, values, names, n);
 }
 
@@ -555,16 +624,15 @@ void StupidDogFocuser::GetFocusParams() {
 
     // Microstep
     if ((ret = readFocuserMicrostep()) < 0) {
-        MicrostepNP.s = IPS_ALERT;
+        MicrostepModeSP.s = IPS_ALERT;
         LOGF_ERROR("* * * * * * * * * * * * * * * * * *Unknown error while reading Stupid Dog Focuser microstep: %d", ret);
-        IDSetNumber(&MicrostepNP, nullptr);
-
+        IDSetSwitch(&MicrostepModeSP, nullptr);
         return;
     }
 
-    MicrostepNP.s = IPS_OK;
-    MicrostepN[0].value = microstep;
-    IDSetNumber(&MicrostepNP, nullptr);
+    MicrostepModeSP.s = IPS_OK;
+
+    IDSetSwitch(&MicrostepModeSP, nullptr);
     // Is Reversed
 }
 

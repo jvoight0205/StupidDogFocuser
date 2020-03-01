@@ -62,6 +62,11 @@ public:
     StupidDogFocuser();
     virtual ~StupidDogFocuser() override = default;
 
+    typedef enum {
+        M1, M2, M4, M8, M16, M32
+    } MicrostepMode;
+
+
     virtual bool ISNewNumber(const char *dev, const char *name, double values[], char *names[], int n) override;
     virtual bool ISNewSwitch(const char *dev, const char *name, ISState *states, char *names[], int n) override;
     bool SetFocuserMicrostep(int _microstep);
@@ -112,7 +117,7 @@ private:
 
     ILight MovingL[1];
     ILightVectorProperty MovingLP;
-    
+
     INumber TemperatureN[1];
     INumberVectorProperty TemperatureNP;
 
@@ -121,10 +126,11 @@ private:
 
     INumber SpeedN[1];
     INumberVectorProperty SpeedNP;
-
-    INumber MicrostepN[1];
-    INumberVectorProperty MicrostepNP;
-
+    
+    // Step mode
+    ISwitch MicrostepModeS[6];
+    ISwitchVectorProperty MicrostepModeSP;
+    
     ISwitch Reversed[2];
     ISwitchVectorProperty ReversedSP;
 
