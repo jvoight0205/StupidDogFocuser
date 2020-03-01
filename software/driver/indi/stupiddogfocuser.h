@@ -142,5 +142,4 @@ private:
 
     // Time for the arduino to boot up.
     static const uint8_t ML_TIMEOUT{ 5};
-
 };

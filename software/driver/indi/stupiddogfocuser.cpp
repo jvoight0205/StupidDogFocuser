@@ -85,7 +85,6 @@ StupidDogFocuser::StupidDogFocuser() {
     serialConnection->setDefaultBaudRate(Connection::Serial::B_115200);
 
     LOG_INFO("Initialized.");
-
 }
 
 bool StupidDogFocuser::initProperties() {
@@ -98,7 +97,7 @@ bool StupidDogFocuser::initProperties() {
     IUFillSwitch(&MicrostepModeS[M4], "M4", "1/4 Step", ISS_OFF);
     IUFillSwitch(&MicrostepModeS[M2], "M2", "1/2 Step", ISS_OFF);
     IUFillSwitch(&MicrostepModeS[M1], "M1", "Full Step", ISS_ON);
-    IUFillSwitchVector(&MicrostepModeSP, MicrostepModeS, 9, getDeviceName(), "Microstep Mode", "", OPTIONS_TAB, IP_RW, ISR_1OFMANY, 0, IPS_IDLE);
+    IUFillSwitchVector(&MicrostepModeSP, MicrostepModeS, 6, getDeviceName(), "Microstep Mode", "", OPTIONS_TAB, IP_RW, ISR_1OFMANY, 0, IPS_IDLE);
 
     IUFillLight(&MovingL[0], "Is Moving", "", IPS_IDLE);
     IUFillLightVector(&MovingLP, MovingL, 1, getDeviceName(), "MOVING", "Moving",
@@ -355,29 +354,29 @@ int StupidDogFocuser::readFocuserMicrostep() {
     if (sscanf(focuser_reply, UNSIGNED_RESPONSE, &temp) < 1)
         return -1;
 
-    switch (temp) {
-        case 1:
-            MicrostepModeS[M1].s = ISS_ON;
-            break;
-        case 2:
-            MicrostepModeS[M2].s = ISS_ON;
-            break;
-        case 4:
-            MicrostepModeS[M4].s = ISS_ON;
-            break;
-        case 8:
-            MicrostepModeS[M8].s = ISS_ON;
-            break;
-        case 16:
-            MicrostepModeS[M16].s = ISS_ON;
-            break;
-        case 32:
-            MicrostepModeS[M32].s = ISS_ON;
-            break;
-        default:
-            //No change
-            break;
-    }
+//    switch (temp) {
+//        case 1:
+//            MicrostepModeS[M1].s = ISS_ON;
+//            break;
+//        case 2:
+//            MicrostepModeS[M2].s = ISS_ON;
+//            break;
+//        case 4:
+//            MicrostepModeS[M4].s = ISS_ON;
+//            break;
+//        case 8:
+//            MicrostepModeS[M8].s = ISS_ON;
+//            break;
+//        case 16:
+//            MicrostepModeS[M16].s = ISS_ON;
+//            break;
+//        case 32:
+//            MicrostepModeS[M32].s = ISS_ON;
+//            break;
+//        default:
+//            //No change
+//            break;
+//    }
 
     return 0;
 }
@@ -515,54 +514,54 @@ void ISNewText(const char *dev, const char *name, char *texts[], char *names[], 
  */
 bool StupidDogFocuser::ISNewSwitch(const char *dev, const char *name, ISState *states, char *names[], int n) {
     // Focus Step Mode
-    if (strcmp(MicrostepModeSP.name, name) == 0) {
-        int current_mode = IUFindOnSwitchIndex(&MicrostepModeSP);
-        int new_mode = current_mode;
-        
-        IUUpdateSwitch(&MicrostepModeSP, states, names, n);
-
-        int target_mode = IUFindOnSwitchIndex(&MicrostepModeSP);
-
-        if (current_mode == target_mode) {
-            MicrostepModeSP.s = IPS_OK;
-            IDSetSwitch(&MicrostepModeSP, nullptr);
-            return true;
-        }
-
-        switch(target_mode){
-            case 0:
-                new_mode = 1;
-                break;
-            case 1:
-                new_mode = 2;
-                break;
-            case 2:
-                new_mode = 4;
-                break;
-            case 3:
-                new_mode = 8;
-                break;
-            case 4:
-                new_mode = 16;
-                break;
-            case 5:
-                new_mode = 32;
-                break;
-            default:
-                new_mode = -1;
-        }
-
-        if (new_mode == -1 || !SetFocuserMicrostep(new_mode)) {
-            IUResetSwitch(&MicrostepModeSP);
-            MicrostepModeS[current_mode].s = ISS_ON;
-            MicrostepModeSP.s = IPS_ALERT;
-            IDSetSwitch(&MicrostepModeSP, nullptr);
-        }
-        
-        MicrostepModeSP.s = IPS_OK;
-        IDSetSwitch(&MicrostepModeSP, nullptr);
-        return true;
-    }
+//    if (strcmp(MicrostepModeSP.name, name) == 0) {
+//        int current_mode = IUFindOnSwitchIndex(&MicrostepModeSP);
+//        int new_mode = current_mode;
+//        
+//        IUUpdateSwitch(&MicrostepModeSP, states, names, n);
+//
+//        int target_mode = IUFindOnSwitchIndex(&MicrostepModeSP);
+//
+//        if (current_mode == target_mode) {
+//            MicrostepModeSP.s = IPS_OK;
+//            IDSetSwitch(&MicrostepModeSP, nullptr);
+//            return true;
+//        }
+//
+//        switch(target_mode){
+//            case 0:
+//                new_mode = 1;
+//                break;
+//            case 1:
+//                new_mode = 2;
+//                break;
+//            case 2:
+//                new_mode = 4;
+//                break;
+//            case 3:
+//                new_mode = 8;
+//                break;
+//            case 4:
+//                new_mode = 16;
+//                break;
+//            case 5:
+//                new_mode = 32;
+//                break;
+//            default:
+//                new_mode = -1;
+//        }
+//
+//        if (new_mode == -1 || !SetFocuserMicrostep(new_mode)) {
+//            IUResetSwitch(&MicrostepModeSP);
+//            MicrostepModeS[current_mode].s = ISS_ON;
+//            MicrostepModeSP.s = IPS_ALERT;
+//            IDSetSwitch(&MicrostepModeSP, nullptr);
+//        }
+//        
+//        MicrostepModeSP.s = IPS_OK;
+//        IDSetSwitch(&MicrostepModeSP, nullptr);
+//        return true;
+//    }
     return INDI::Focuser::ISNewSwitch(dev, name, states, names, n);
 }
 
@@ -631,7 +630,6 @@ void StupidDogFocuser::GetFocusParams() {
     }
 
     MicrostepModeSP.s = IPS_OK;
-
     IDSetSwitch(&MicrostepModeSP, nullptr);
     // Is Reversed
 }
@@ -641,13 +639,12 @@ IPState StupidDogFocuser::MoveAbsFocuser(uint32_t targetTicks) {
     targetPos = targetTicks;
 
     if (targetTicks > FocusAbsPosN[0].max) {
-        LOG_DEBUG("* * * * * * * * * * * * * * * * * *Error, requested position is out of range.");
+        LOG_ERROR("Error, requested position is out of range.");
         return IPS_ALERT;
     }
 
     if (ret = sendFocuserPositionAbsolute(targetTicks) < 0) {
-        LOGF_DEBUG("* * * * * * * * * * * * * * * * * *Sending the absolute movement failed %3d", ret);
-
+        LOGF_ERROR("Sending the absolute movement failed %3d", ret);
         return IPS_ALERT;
     }
 
@@ -662,7 +659,7 @@ IPState StupidDogFocuser::MoveRelFocuser(FocusDirection dir, uint32_t ticks) {
 }
 
 bool StupidDogFocuser::AbortFocuser() {
-    LOG_DEBUG("* * * * * * * * * * * * * * * * * *Aborting focuser...");
+    LOG_INFO("Aborting focuser!");
 
     int nbytes_written;
     const char *buf = "<HA>\r";
