@@ -307,7 +307,7 @@ int StupidDogFocuser::readFocuserTemperature() {
 int StupidDogFocuser::readFocuserSpeed() {
     LOG_DEBUG("Reading Speed");
     if (isSimulation()) {
-        SpeedN[0].value = 255;
+        FocusSpeedN[0].value = 255;
         return 0;
     }
 
@@ -610,16 +610,16 @@ void StupidDogFocuser::GetFocusParams() {
 
     // Speed
     if ((ret = readFocuserSpeed()) < 0) {
-        SpeedNP.s = IPS_ALERT;
+        FocusSpeedNP.s = IPS_ALERT;
         LOGF_ERROR("* * * * * * * * * * * * * * * * * *Unknown error while reading Stupid Dog Focuser speed: %d", ret);
-        IDSetNumber(&SpeedNP, nullptr);
+        IDSetNumber(&FocusSpeedNP, nullptr);
         return;
     }
 
-    SpeedNP.s = IPS_OK;
-    SpeedN[0].value = speed;
+    FocusSpeedNP.s = IPS_OK;
+    FocusSpeedN[0].value = speed;
 
-    IDSetNumber(&SpeedNP, nullptr);
+    IDSetNumber(&FocusSpeedNP, nullptr);
 
     // Microstep
     if ((ret = readFocuserMicrostep()) < 0) {

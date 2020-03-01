@@ -120,22 +120,12 @@ private:
 
     INumber TemperatureN[1];
     INumberVectorProperty TemperatureNP;
-
-    INumber FocuserRangeN[1];
-    INumberVectorProperty FocuserRangeNP;
-
-    INumber SpeedN[1];
-    INumberVectorProperty SpeedNP;
     
     // Step mode
     ISwitch MicrostepModeS[6];
     ISwitchVectorProperty MicrostepModeSP;
-    
-    ISwitch Reversed[2];
-    ISwitchVectorProperty ReversedSP;
-
+   
     ISwitch Enabled[2];
-
     ISwitchVectorProperty EnabledSP;
 
     // Update status and perform maintenance every 2 seconds 
