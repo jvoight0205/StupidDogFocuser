@@ -106,7 +106,7 @@ private:
 
     int timerID{ -1};
     double targetPos{ 0};
-    bool moving{false};
+    bool simulatedMoving{false};
     int8_t dir{1};
     uint8_t microstep{1};
     uint8_t speed{255};
@@ -120,11 +120,11 @@ private:
 
     INumber TemperatureN[1];
     INumberVectorProperty TemperatureNP;
-    
+
     // Step mode
     ISwitch MicrostepModeS[6];
     ISwitchVectorProperty MicrostepModeSP;
-   
+
     ISwitch Enabled[2];
     ISwitchVectorProperty EnabledSP;
 
