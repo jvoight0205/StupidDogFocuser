@@ -77,30 +77,22 @@ Wire Wire Line
 	6700 2300 6800 2300
 Wire Wire Line
 	6700 2200 6800 2200
-Wire Wire Line
-	7800 2450 7900 2450
-Wire Wire Line
-	7800 2250 7900 2250
-Wire Wire Line
-	8300 1950 8300 2050
-Wire Wire Line
-	8100 1950 8100 2050
-Text GLabel 8300 1950 1    50   Input ~ 0
-A1
-Text GLabel 8100 1950 1    50   Input ~ 0
-A2
-Text GLabel 7800 2450 0    50   Input ~ 0
-B2
-Text GLabel 7800 2250 0    50   Input ~ 0
-B1
+Text GLabel 8650 2250 2    50   Input ~ 0
+G
+Text GLabel 8650 2350 2    50   Input ~ 0
+BLK
+Text GLabel 8650 2550 2    50   Input ~ 0
+BL
+Text GLabel 8650 2450 2    50   Input ~ 0
+R
 Text GLabel 6800 2600 2    50   Input ~ 0
-B2
+BL
 Text GLabel 6800 2500 2    50   Input ~ 0
-B1
+R
 Text GLabel 6800 2300 2    50   Input ~ 0
-A2
+G
 Text GLabel 6800 2200 2    50   Input ~ 0
-A1
+BLK
 Wire Wire Line
 	5800 2700 5900 2700
 Text GLabel 5800 2700 0    50   Input ~ 0
@@ -129,15 +121,15 @@ Text GLabel 7650 5700 3    50   Input ~ 0
 DHT
 Text GLabel 2150 2950 0    50   Input ~ 0
 DHT
-Text GLabel 3350 2750 2    50   Input ~ 0
+Text GLabel 3350 2650 2    50   Input ~ 0
 M0
 Text GLabel 2150 2450 0    50   Input ~ 0
-SW_A
+SW
 Text GLabel 2150 2350 0    50   Input ~ 0
-ENCB_A
+ENCB
 Text GLabel 2150 2250 0    50   Input ~ 0
-ENCA_A
-Text GLabel 3350 2850 2    50   Input ~ 0
+ENCA
+Text GLabel 3350 2550 2    50   Input ~ 0
 ~Enable
 Text GLabel 5800 2500 0    50   Input ~ 0
 Dir
@@ -179,15 +171,13 @@ Wire Wire Line
 Wire Wire Line
 	2150 5600 2300 5600
 Text GLabel 2150 5600 0    50   Input ~ 0
-ENCA_A
+ENCA
 Text GLabel 2150 5700 0    50   Input ~ 0
-ENCB_A
+ENCB
 Text GLabel 2150 5800 0    50   Input ~ 0
-SW_A
+SW
 NoConn ~ 2300 5300
 NoConn ~ 2300 5400
-NoConn ~ 2300 5500
-NoConn ~ 2900 5500
 NoConn ~ 2900 5400
 NoConn ~ 2900 5300
 Wire Wire Line
@@ -197,11 +187,11 @@ Wire Wire Line
 Wire Wire Line
 	2900 5600 2950 5600
 Text GLabel 2950 5800 2    50   Input ~ 0
-SW
+SW_A
 Text GLabel 2950 5700 2    50   Input ~ 0
-ENC_B
+ENCB_A
 Text GLabel 2950 5600 2    50   Input ~ 0
-ENC_A
+ENCA_A
 Wire Wire Line
 	5400 5450 5550 5450
 Wire Wire Line
@@ -218,21 +208,18 @@ Wire Wire Line
 	5800 5200 5800 5150
 Wire Wire Line
 	5550 5150 5800 5150
-Connection ~ 5550 5150
 Text GLabel 5900 5150 2    50   Input ~ 0
-SW
+SW_A
+Connection ~ 4800 4800
 Wire Wire Line
-	5550 5100 5550 5150
-Connection ~ 4550 4800
-Wire Wire Line
-	5550 4800 4550 4800
+	5400 4800 4800 4800
 Connection ~ 3850 5550
 Wire Wire Line
-	3850 6300 4550 6300
+	3850 6300 4800 6300
 Wire Wire Line
 	3850 5550 3850 6300
 Wire Wire Line
-	3850 4800 4550 4800
+	3850 4800 4800 4800
 Wire Wire Line
 	3850 5550 3850 4800
 Wire Wire Line
@@ -258,16 +245,10 @@ Wire Wire Line
 	4300 5150 4350 5150
 Wire Wire Line
 	4300 5950 4350 5950
-Connection ~ 4550 5950
 Text GLabel 4300 5950 0    50   Input ~ 0
-ENC_B
-Connection ~ 4550 5150
+ENCB_A
 Text GLabel 4300 5150 0    50   Input ~ 0
-ENC_A
-Wire Wire Line
-	4550 5950 4550 6000
-Wire Wire Line
-	4550 5100 4550 5150
+ENCA_A
 Wire Wire Line
 	4550 5650 4800 5650
 Wire Wire Line
@@ -345,31 +326,20 @@ U 1 1 5E4AECAA
 P 6300 1350
 F 0 "C1" H 6415 1396 50  0000 L CNN
 F 1 "4.7uF" H 6415 1305 50  0000 L CNN
-F 2 "Capacitor_THT:C_Disc_D3.0mm_W2.0mm_P2.50mm" H 6338 1200 50  0001 C CNN
+F 2 "Capacitor_THT:C_Disc_D4.7mm_W2.5mm_P5.00mm" H 6338 1200 50  0001 C CNN
 F 3 "~" H 6300 1350 50  0001 C CNN
 	1    6300 1350
 	1    0    0    -1  
 $EndComp
 $Comp
-L Motor:Stepper_Motor_bipolar M1
-U 1 1 5E4AD4CA
-P 8200 2350
-F 0 "M1" H 8388 2474 50  0000 L CNN
-F 1 "Stepper_Motor_bipolar" H 8388 2383 50  0000 L CNN
-F 2 "Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical" H 8210 2340 50  0001 C CNN
-F 3 "http://www.infineon.com/dgdl/Application-Note-TLE8110EE_driving_UniPolarStepperMotor_V1.1.pdf?fileId=db3a30431be39b97011be5d0aa0a00b0" H 8210 2340 50  0001 C CNN
-	1    8200 2350
-	1    0    0    -1  
-$EndComp
-$Comp
 L Device:R R2
 U 1 1 5E4AB473
-P 5550 4950
-F 0 "R2" H 5620 4996 50  0000 L CNN
-F 1 "1k" H 5620 4905 50  0000 L CNN
-F 2 "Resistor_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal" V 5480 4950 50  0001 C CNN
-F 3 "~" H 5550 4950 50  0001 C CNN
-	1    5550 4950
+P 5400 4950
+F 0 "R2" H 5470 4996 50  0000 L CNN
+F 1 "1k" H 5470 4905 50  0000 L CNN
+F 2 "Resistor_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P7.62mm_Horizontal" V 5330 4950 50  0001 C CNN
+F 3 "~" H 5400 4950 50  0001 C CNN
+	1    5400 4950
 	1    0    0    -1  
 $EndComp
 $Comp
@@ -378,7 +348,7 @@ U 1 1 5E4AB0D6
 P 5550 5300
 F 0 "R4" H 5620 5346 50  0000 L CNN
 F 1 "1k" H 5620 5255 50  0000 L CNN
-F 2 "Resistor_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal" V 5480 5300 50  0001 C CNN
+F 2 "Resistor_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P7.62mm_Horizontal" V 5480 5300 50  0001 C CNN
 F 3 "~" H 5550 5300 50  0001 C CNN
 	1    5550 5300
 	1    0    0    -1  
@@ -386,12 +356,12 @@ $EndComp
 $Comp
 L Device:R R6
 U 1 1 5E4AADCA
-P 4550 6150
-F 0 "R6" H 4620 6196 50  0000 L CNN
-F 1 "1k" H 4620 6105 50  0000 L CNN
-F 2 "Resistor_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal" V 4480 6150 50  0001 C CNN
-F 3 "~" H 4550 6150 50  0001 C CNN
-	1    4550 6150
+P 4800 6150
+F 0 "R6" H 4870 6196 50  0000 L CNN
+F 1 "1k" H 4870 6105 50  0000 L CNN
+F 2 "Resistor_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P7.62mm_Horizontal" V 4730 6150 50  0001 C CNN
+F 3 "~" H 4800 6150 50  0001 C CNN
+	1    4800 6150
 	1    0    0    -1  
 $EndComp
 $Comp
@@ -400,7 +370,7 @@ U 1 1 5E4AAB06
 P 4550 5800
 F 0 "R5" H 4620 5846 50  0000 L CNN
 F 1 "1k" H 4620 5755 50  0000 L CNN
-F 2 "Resistor_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal" V 4480 5800 50  0001 C CNN
+F 2 "Resistor_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P7.62mm_Horizontal" V 4480 5800 50  0001 C CNN
 F 3 "~" H 4550 5800 50  0001 C CNN
 	1    4550 5800
 	1    0    0    -1  
@@ -411,7 +381,7 @@ U 1 1 5E4AA80A
 P 4550 5300
 F 0 "R3" H 4620 5346 50  0000 L CNN
 F 1 "1k" H 4620 5255 50  0000 L CNN
-F 2 "Resistor_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal" V 4480 5300 50  0001 C CNN
+F 2 "Resistor_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P7.62mm_Horizontal" V 4480 5300 50  0001 C CNN
 F 3 "~" H 4550 5300 50  0001 C CNN
 	1    4550 5300
 	1    0    0    -1  
@@ -419,12 +389,12 @@ $EndComp
 $Comp
 L Device:R R1
 U 1 1 5E4A9F5B
-P 4550 4950
-F 0 "R1" H 4620 4996 50  0000 L CNN
-F 1 "1k" H 4620 4905 50  0000 L CNN
-F 2 "Resistor_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P5.08mm_Horizontal" V 4480 4950 50  0001 C CNN
-F 3 "~" H 4550 4950 50  0001 C CNN
-	1    4550 4950
+P 4800 4950
+F 0 "R1" H 4870 4996 50  0000 L CNN
+F 1 "1k" H 4870 4905 50  0000 L CNN
+F 2 "Resistor_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P7.62mm_Horizontal" V 4730 4950 50  0001 C CNN
+F 3 "~" H 4800 4950 50  0001 C CNN
+	1    4800 4950
 	1    0    0    -1  
 $EndComp
 $Comp
@@ -531,7 +501,6 @@ NoConn ~ 3250 2350
 NoConn ~ 3250 2450
 NoConn ~ 3250 3050
 NoConn ~ 3250 3150
-NoConn ~ 2250 2850
 NoConn ~ 2250 2750
 NoConn ~ 2250 2650
 NoConn ~ 2250 2550
@@ -546,9 +515,9 @@ Text GLabel 5800 2800 0    50   Input ~ 0
 M1
 Text GLabel 5800 2900 0    50   Input ~ 0
 M2
-Text GLabel 3350 2650 2    50   Input ~ 0
+Text GLabel 3350 2750 2    50   Input ~ 0
 M1
-Text GLabel 3350 2550 2    50   Input ~ 0
+Text GLabel 3350 2850 2    50   Input ~ 0
 M2
 Wire Wire Line
 	3350 2550 3250 2550
@@ -558,4 +527,118 @@ Wire Wire Line
 	5800 2800 5900 2800
 Wire Wire Line
 	5900 2900 5800 2900
+Wire Wire Line
+	4800 5100 4800 5450
+Connection ~ 4800 5450
+Wire Wire Line
+	4800 6000 4800 5650
+Connection ~ 4800 5650
+Wire Wire Line
+	5400 5100 5400 5450
+Connection ~ 5400 5450
+Text GLabel 2150 2850 0    50   Input ~ 0
+LIM
+Wire Wire Line
+	2150 2850 2250 2850
+Text GLabel 2150 5500 0    50   Input ~ 0
+LIM
+Wire Wire Line
+	2150 5500 2300 5500
+Text GLabel 2950 5500 2    50   Input ~ 0
+LIM_A
+Wire Wire Line
+	2900 5500 2950 5500
+$Comp
+L dk_Terminal-Blocks-Wire-to-Board:OSTTC062162 J1
+U 1 1 5E624889
+P 8350 2250
+F 0 "J1" V 8119 2233 60  0000 C CNN
+F 1 "OSTTC062162" V 8217 2233 50  0000 C CNN
+F 2 "digikey-footprints:Term_Block_1x6_P5.08mm" H 8550 2450 60  0001 L CNN
+F 3 "http://www.on-shore.com/wp-content/uploads/OSTTCXX2162.pdf" H 8550 2550 60  0001 L CNN
+F 4 "ED2611-ND" H 8550 2650 60  0001 L CNN "Digi-Key_PN"
+F 5 "OSTTC042162" H 8550 2750 60  0001 L CNN "MPN"
+F 6 "Connectors, Interconnects" H 8550 2850 60  0001 L CNN "Category"
+F 7 "Terminal Blocks - Wire to Board" H 8550 2950 60  0001 L CNN "Family"
+F 8 "http://www.on-shore.com/wp-content/uploads/OSTTCXX2162.pdf" H 8550 3050 60  0001 L CNN "DK_Datasheet_Link"
+F 9 "/product-detail/en/on-shore-technology-inc/OSTTC042162/ED2611-ND/614560" H 8550 3150 60  0001 L CNN "DK_Detail_Page"
+F 10 "TERM BLK 4P SIDE ENT 5.08MM PCB" H 8550 3250 60  0001 L CNN "Description"
+F 11 "On Shore Technology Inc." H 8550 3350 60  0001 L CNN "Manufacturer"
+F 12 "Active" H 8550 3450 60  0001 L CNN "Status"
+	1    8350 2250
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	8450 2250 8650 2250
+Wire Wire Line
+	8450 2350 8650 2350
+Wire Wire Line
+	8450 2450 8650 2450
+Wire Wire Line
+	8450 2550 8650 2550
+Text GLabel 8650 2650 2    50   Input ~ 0
+LIM_SW
+Text GLabel 8650 2750 2    50   Input ~ 0
+GND
+Wire Wire Line
+	8450 2650 8650 2650
+Wire Wire Line
+	8450 2750 8650 2750
+Wire Wire Line
+	8050 4200 8200 4200
+Wire Wire Line
+	8450 3900 8550 3900
+Connection ~ 8450 3900
+Wire Wire Line
+	8450 3950 8450 3900
+Wire Wire Line
+	8200 3900 8450 3900
+Text GLabel 8550 3900 2    50   Input ~ 0
+LIM_A
+Wire Wire Line
+	8050 3550 7850 3550
+$Comp
+L Device:R R7
+U 1 1 5E63E909
+P 8050 3700
+F 0 "R7" H 8120 3746 50  0000 L CNN
+F 1 "1k" H 8120 3655 50  0000 L CNN
+F 2 "Resistor_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P7.62mm_Horizontal" V 7980 3700 50  0001 C CNN
+F 3 "~" H 8050 3700 50  0001 C CNN
+	1    8050 3700
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:R R8
+U 1 1 5E63E913
+P 8200 4050
+F 0 "R8" H 8270 4096 50  0000 L CNN
+F 1 "1k" H 8270 4005 50  0000 L CNN
+F 2 "Resistor_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P7.62mm_Horizontal" V 8130 4050 50  0001 C CNN
+F 3 "~" H 8200 4050 50  0001 C CNN
+	1    8200 4050
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:C C6
+U 1 1 5E63E91D
+P 8450 4100
+F 0 "C6" H 8565 4146 50  0000 L CNN
+F 1 "4.7uF" H 8565 4055 50  0000 L CNN
+F 2 "Capacitor_THT:C_Disc_D3.0mm_W2.0mm_P2.50mm" H 8488 3950 50  0001 C CNN
+F 3 "~" H 8450 4100 50  0001 C CNN
+	1    8450 4100
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	8050 3850 8050 4200
+Text GLabel 7900 4200 0    50   Input ~ 0
+LIM_SW
+Wire Wire Line
+	7900 4200 8050 4200
+Connection ~ 8050 4200
+Text GLabel 7850 3550 0    50   Input ~ 0
+VCC
+Text GLabel 8450 4250 3    50   Input ~ 0
+GND
 $EndSCHEMATC
