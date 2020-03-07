@@ -431,7 +431,7 @@ F 3 "~" H 4350 5350 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L dk_Logic-Gates-and-Inverters:SN74HC14N U2
+L StupidDogFocuserPCB-rescue:SN74HC14N-dk_Logic-Gates-and-Inverters U2
 U 1 1 5E4A594F
 P 2600 5500
 F 0 "U2" H 2600 4797 60  0000 C CNN
@@ -549,7 +549,7 @@ LIM_A
 Wire Wire Line
 	2900 5500 2950 5500
 $Comp
-L dk_Terminal-Blocks-Wire-to-Board:OSTTC062162 J1
+L StupidDogFocuserPCB-rescue:OSTTC062162-dk_Terminal-Blocks-Wire-to-Board J1
 U 1 1 5E624889
 P 8350 2250
 F 0 "J1" V 8119 2233 60  0000 C CNN
