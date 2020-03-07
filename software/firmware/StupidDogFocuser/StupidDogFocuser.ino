@@ -25,15 +25,15 @@
 
 #define STEP_PIN 2
 #define DIR_PIN 3
-#define ENABLE_PIN A5
-#define M0_PIN A4
-#define M1_PIN A3
-#define M2_PIN A2
 #define ENC_A 5
 #define ENC_B 6
 #define TURBO_PIN 7
-#define HALF_STEP_PIN A4
+#define LIM_SW 11
 #define DHT_PIN 12
+#define ENABLE_PIN A2
+#define M0_PIN A3
+#define M1_PIN A4
+#define M2_PIN A5
 #define VERSION ".9"
 #define TURBO_MULTIPLIER 200
 
@@ -70,11 +70,23 @@
 #define GET_VERSION "VE"
 
 #define BUFFER_SIZE 15
+// If LIMIT_SWITCH is defined, we'll enable the homing mechanism source code
+#define LIMIT_SWITCH
 
 int16_t encoderPosition = 0; // Set to be incorrect on purpose so that it gets updated in setup.
 uint32_t motorPosition = 10800; // 10800 is 2 full turns of a 17:1 geared 200 step stepper
 
 // speed needs to map to 255 being the max
+/*
+ * At 12V, you aren't going to get much better than 1500 steps per second. You can get to 4000
+ * if you switch to 1/2 stepping and so on. But, the bottom line is that's probably a bit fast
+ * for a focuser that ends up measured in tens of microns. You probably want to keep it below the
+ * maximum. Also, keep in mind that every loop needs to potentially interpret a bunch of commands
+ * from the driver software. If you're stepping at the max speed, you'll end up missing steps
+ * if you have to pull a bunch of serial data. Think of 1500 as the very very outside of single-
+ * stepping speeds and 3000 for halfstepping. The only time that speed could be important on this
+ * is if you have miles to go to reach the limit switch.
+ */
 uint16_t maxStepperSpeed = 1500; // 1500 for full stepping. 15000 for 1/16th stepping
 uint16_t stepperSpeed = maxStepperSpeed; // Gets remapped for INDI
 int indiSpeed = 255; // INDI max speed
@@ -99,6 +111,7 @@ void setup() {
   initializeDHT();
   initializeStepper();
   initializeEncoder();
+
   output(VERSION);
 }
 
@@ -134,14 +147,13 @@ void loop() {
 
 /**
    Determine if a valid command has been received and act on it.
-   This parser is built as a bit of a decision tree for performance reasons.
 */
 void interpretSerial() {
   if (newData) {
     long myLong = 0;
     double myDouble = 0.0;
 
-    strcpy(buffer, "              ");
+    strcpy(buffer, "              "); // There has to be a better way. I don't know why this doesn't get reset.
 
     if (strcmp(commandLine, HALT) == 0) {
       stepper.stop();
@@ -177,7 +189,6 @@ void interpretSerial() {
     else if (strcmp(commandLine, GET_HIGH_LIMIT) == 0) {
       sprintf(buffer, LONG_RESPONSE, highLimit);
     }
-
 
     else if (strcmp(commandLine, GET_SPEED) == 0) {
       sprintf(buffer, UNSIGNED_RESPONSE, indiSpeed);
@@ -275,32 +286,29 @@ void readSerial() {
   char endMarker = '>';
   char rc;
 
-  while (Serial.available() > 0 && newData == false) {
+  while (Serial.available() > 0 && !newData) {
     rc = Serial.read();
 
-    if (recvInProgress == true) {
-      if (rc != endMarker) {
+    if (recvInProgress) { // If we're already receiving, append
+      if (rc != endMarker) { // Make sure it isn't the end marker
         commandLine[ndx] = rc;
         ndx++;
         if (ndx >= BUFFER_SIZE) {
           ndx = BUFFER_SIZE - 1; // keeps the buffer from overflowing
         }
-      }
-      else {
+      } else {                   // If it is the end marker
         commandLine[ndx] = '\0'; // terminate the string
-        recvInProgress = false;
+        recvInProgress = false;  // We're no longer receiving
         ndx = 0;
-        newData = true;
+        newData = true;         // TADA
       }
     }
 
-    else if (rc == startMarker) {
+    else if (rc == startMarker) { // Look for the start marker
       recvInProgress = true;
     }
   }
 }
-
-
 
 /*
    Determine if the encoder has moved this cycle. If so, make the adjustments
@@ -309,8 +317,8 @@ void readSerial() {
 void interpretEncoder() {
   long newEncoderPosition = encoder.read();
   if (newEncoderPosition != encoderPosition) {                  // If there's any change from the previous read,
-    long encoderChange = newEncoderPosition - encoderPosition;  // determine the difference,
-    stepper.moveTo(stepper.targetPosition() + encoderChange);                         // set the new target
+    long encoderChange = (newEncoderPosition - encoderPosition) * getTurboMultiplier();  // determine the difference and multiply it by current turbo
+    stepper.moveTo(stepper.targetPosition() + encoderChange);  // set the new target
   }
   encoderPosition = newEncoderPosition;                       // reset the encoder status
 }
@@ -335,6 +343,7 @@ void initializeStepper() {
   pinMode(M1_PIN, OUTPUT);
   pinMode(M2_PIN, OUTPUT);
   setMicrostep(microstep);
+  // TODO: Homing sequence
 }
 
 void setMicrostep(int ms) {
