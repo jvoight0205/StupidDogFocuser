@@ -196,7 +196,7 @@ void interpretSerial() {
 
     else if (strcmp(commandLine, GET_TEMPERATURE) == 0) {
       // because of some kind of Arduino bullshit, %f doesn't work the way it's supposed to
-      sprintf(buffer, SIGNED_RESPONSE, 33); //dht.readTemperature()); // TODO: Reconnect DHT.
+      sprintf(buffer, SIGNED_RESPONSE, dht.readTemperature()); // TODO: Reconnect DHT.
     }
 
     else if (strcmp(commandLine, GET_POSITION) == 0) {
