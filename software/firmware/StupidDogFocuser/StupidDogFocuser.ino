@@ -35,7 +35,7 @@
 #define M1_PIN A4
 #define M2_PIN A5
 #define VERSION ".9"
-#define TURBO_MULTIPLIER 200
+#define TURBO_MULTIPLIER 20
 
 
 #define DHTTYPE DHT11
@@ -68,13 +68,13 @@
 #define LONG_RESPONSE "%ld"
 #define FLOAT_RESPONSE "%f"
 #define GET_VERSION "VE"
-
+#define TEMP_DEV -3
 #define BUFFER_SIZE 15
 // If LIMIT_SWITCH is defined, we'll enable the homing mechanism source code
 #define LIMIT_SWITCH
 
 int16_t encoderPosition = 0; // Set to be incorrect on purpose so that it gets updated in setup.
-uint32_t motorPosition = 10800; // 10800 is 2 full turns of a 17:1 geared 200 step stepper
+uint32_t startingMotorPosition = 10800; // 10800 is 2 full turns of a 17:1 geared 200 step stepper
 
 // speed needs to map to 255 being the max
 /*
@@ -82,16 +82,16 @@ uint32_t motorPosition = 10800; // 10800 is 2 full turns of a 17:1 geared 200 st
  * if you switch to 1/2 stepping and so on. But, the bottom line is that's probably a bit fast
  * for a focuser that ends up measured in tens of microns. You probably want to keep it below the
  * maximum. Also, keep in mind that every loop needs to potentially interpret a bunch of commands
- * from the driver software. If you're stepping at the max speed, you'll end up missing steps
+ * from the driver software. If you're stepping at the max speed, you'll end up missing s55555555555555555555555555555teps
  * if you have to pull a bunch of serial data. Think of 1500 as the very very outside of single-
  * stepping speeds and 3000 for halfstepping. The only time that speed could be important on this
  * is if you have miles to go to reach the limit switch.
  */
-uint16_t maxStepperSpeed = 1500; // 1500 for full stepping. 15000 for 1/16th stepping
+uint16_t maxStepperSpeed = 1500; // 1500 for full stepping. 3000 half. 15000 for 1/16th stepping
 uint16_t stepperSpeed = maxStepperSpeed; // Gets remapped for INDI
 int indiSpeed = 255; // INDI max speed
-uint16_t accelRate = 3000; // I've had excellent results with 3000
-uint8_t microstep = 1; // can only be multiples of 2
+uint16_t accelRate = 1500; // I've had excellent results with 2000
+uint8_t microstep = 2; // can only be multiples of 2
 bool enabled = true;
 bool reversed = false;
 
@@ -140,9 +140,6 @@ void loop() {
   interpretEncoder();
   stepper.run();
 
-  motorPosition = stepper.currentPosition();
-
-  // TODO: Disable when not moving
 }
 
 /**
@@ -196,7 +193,10 @@ void interpretSerial() {
 
     else if (strcmp(commandLine, GET_TEMPERATURE) == 0) {
       // because of some kind of Arduino bullshit, %f doesn't work the way it's supposed to
-      sprintf(buffer, SIGNED_RESPONSE, dht.readTemperature()); // TODO: Reconnect DHT.
+      float realTemperature=dht.readTemperature() + TEMP_DEV;
+      int8_t intPortion = (int)realTemperature;
+      uint8_t floatPortion = abs((int)((realTemperature - intPortion) * 100));
+      sprintf(buffer, "%d.%02d", intPortion, floatPortion);
     }
 
     else if (strcmp(commandLine, GET_POSITION) == 0) {
@@ -336,7 +336,7 @@ uint16_t getTurboMultiplier() {
 void initializeStepper() {
   stepper.setMaxSpeed(map(indiSpeed, 1, 255, 1, maxStepperSpeed));
   stepper.setAcceleration(accelRate);
-  stepper.setCurrentPosition(motorPosition);
+  stepper.setCurrentPosition(startingMotorPosition);
   pinMode(ENABLE_PIN, OUTPUT);
   digitalWrite(ENABLE_PIN, LOW);
   pinMode(M0_PIN, OUTPUT);
