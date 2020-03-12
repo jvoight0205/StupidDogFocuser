@@ -335,6 +335,7 @@ int StupidDogFocuser::readFocuserSpeed() {
     if (sscanf(focuser_reply, UNSIGNED_RESPONSE, &temp) < 1)
         return -1;
 
+    speed = temp;
     FocusSpeedN[0].value = (double) speed;
     LOGF_DEBUG("Speed: %d", speed);
 
