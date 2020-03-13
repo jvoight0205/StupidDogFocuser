@@ -28,6 +28,7 @@ Makefile
 CMakeFiles
 indi_stupiddogfocuser
 
+# Netbeans stuff
 /software/driver/indi/nbproject/private/Default.properties
 /software/driver/indi/nbproject/private/c_standard_headers_indexer.c
 /software/driver/indi/nbproject/private/Default-build.log
@@ -40,3 +41,6 @@ indi_stupiddogfocuser
 /software/driver/ascom/StupidDogFocuser/obj/Debug
 /software/driver/ascom/StupidDogFocuser/bin/Debug
 /software/driver/ascom/StupidDogFocuser/obj
+
+# CLion files
+*.iml

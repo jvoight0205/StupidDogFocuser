@@ -1,4 +1,4 @@
-update=2/17/2020 5:56:17 PM
+update=3/5/2020 9:39:01 PM
 version=1
 last_client=kicad
 [general]
@@ -25,7 +25,7 @@ ERC_TestSimilarLabels=1
 [pcbnew]
 version=1
 PageLayoutDescrFile=
-LastNetListRead=
+LastNetListRead=StupidDogFocuserPCB.net
 CopperLayerCount=2
 BoardThickness=1.6
 AllowMicroVias=0
