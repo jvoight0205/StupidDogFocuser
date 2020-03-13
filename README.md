@@ -45,26 +45,26 @@ Serial commands are as follows:
 
 | Command | Description | Response        | Defaults | Comments |
 | ---     | ---         | ---             | ---      | --- |
-| HA#	  | Halt        | HA#             | N/A      | as quickly as possible |
-| GE# 	  | Is enabled? | [T\|F]#          | True     | Motor Driver |
-| GR#     | Is reversed?| [T\|F]#          | False    | Motor direction |
-| GM#     | Microsteps  | [1-32]#         | _(1/)_1  | Denominator |
-| GH#     | High limit  | [-32768-32727]# | 32767    | Distance from initial |
-| GL#     | Low limit   | [-32768-32767]# | -32768   | 16 bit int |
-| GS#     | Speed       | [200-4000]      | 1000     | Stepper motor dependent |
-| GT#     | Temperature | %f.2#             | N/A      | DHT11/22 precision  |
-| GP#     | Position    | [-32768-32727]# | 0        | Previous focus position |
-| IM#     | Moving?     | [T\|F]#          | F        | True during movement |
-| AM%d#   | Absolute Move | %d# (target) | N/A      | Target position|
-| RM%d#   | Relative Move | %d# (target) | N/A      | Target position |
-| RD[T\|F]#     | Reverse Motor | [T\|F]#       | N/A      | Response is new is reversed |
-| SY%d#   | Sync Motor | %d# (same as param) | N/A  | |
-| EN#     | Enable motor | EN#          | N/A| ||
-| DI#     | Disable motor| DI#          | N/A | |
-| SM[1-32]# | Set Microstepping 1/1 - 1/32 | %u# | 1 | New microstep mode |
-| SP%u#   | Set Speed 200-4000 | %d# | New speed | 1000 | Measure your motor to determine |
-| SH%d#   | Set high limit | %d# | 32767 | Response is new high |
-| SL%d#   | Set low limit  | %d# | -32768 | Response is new low limit |
+| <HA>	  | Halt        | HA!             | N/A      | as quickly as possible |
+| <GE> 	  | Is enabled? | [T\|F]!          | True     | Motor Driver |
+| <GR>     | Is reversed?| [T\|F]!          | False    | Motor direction |
+| <GM>     | Microsteps  | [1-32]!         | _(1/)_1  | Denominator |
+| <GH>     | High limit  | [-32768-32727]! | 32767    | Distance from initial |
+| <GL>     | Low limit   | [-32768-32767]! | -32768   | 16 bit int |
+| <GS>     | Speed       | [200-4000]!      | 1000     | Stepper motor dependent |
+| <GT>     | Temperature | %f.2!             | N/A      | DHT11/22 precision  |
+| <GP>     | Position    | [-32768-32727]! | 0        | Previous focus position |
+| <IM>     | Moving?     | [T\|F]!          | F        | True during movement |
+| <AM%d>   | Absolute Move | %d! (target) | N/A      | Target position|
+| <RM%d>   | Relative Move | %d! (target) | N/A      | Target position |
+| <RD[T\|F]>     | Reverse Motor | [T\|F]!       | N/A      | Response is new is reversed |
+| <SY%d>   | Sync Motor | %d! (same as param) | N/A  | |
+| <EN>     | Enable motor | EN!          | N/A| ||
+| <DI>     | Disable motor| DI!          | N/A | |
+| <SM[1-32]> | Set Microstepping 1/1 - 1/32 | %u! | 1 | New microstep mode |
+| <SP%u>   | Set Speed 200-4000 | %d! | New speed | 1000 | Measure your motor to determine |
+| <SH%d>   | Set high limit | %d! | 32767 | Response is new high |
+| <SL%d>   | Set low limit  | %d! | -32768 | Response is new low limit |
 
 Any error will trigger ERROR(optional message)#
 
