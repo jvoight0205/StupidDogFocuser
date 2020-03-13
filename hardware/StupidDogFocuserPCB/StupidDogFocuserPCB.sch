@@ -32,7 +32,7 @@ U 1 1 5E5521CB
 P 2600 6300
 F 0 "C5" H 2715 6346 50  0000 L CNN
 F 1 "4.7uF" H 2715 6255 50  0000 L CNN
-F 2 "Capacitor_THT:C_Disc_D3.0mm_W2.0mm_P2.50mm" H 2638 6150 50  0001 C CNN
+F 2 "Capacitor_THT:C_Disc_D4.7mm_W2.5mm_P5.00mm" H 2638 6150 50  0001 C CNN
 F 3 "~" H 2600 6300 50  0001 C CNN
 	1    2600 6300
 	1    0    0    -1  
@@ -403,7 +403,7 @@ U 1 1 5E4A97CD
 P 5800 5350
 F 0 "C3" H 5915 5396 50  0000 L CNN
 F 1 "4.7uF" H 5915 5305 50  0000 L CNN
-F 2 "Capacitor_THT:C_Disc_D3.0mm_W2.0mm_P2.50mm" H 5838 5200 50  0001 C CNN
+F 2 "Capacitor_THT:C_Disc_D4.7mm_W2.5mm_P5.00mm" H 5838 5200 50  0001 C CNN
 F 3 "~" H 5800 5350 50  0001 C CNN
 	1    5800 5350
 	1    0    0    -1  
@@ -414,7 +414,7 @@ U 1 1 5E4A9076
 P 4350 5700
 F 0 "C4" H 4200 5800 50  0000 L CNN
 F 1 "4.7uF" H 4050 5700 50  0000 L CNN
-F 2 "Capacitor_THT:C_Disc_D3.0mm_W2.0mm_P2.50mm" H 4388 5550 50  0001 C CNN
+F 2 "Capacitor_THT:C_Disc_D4.7mm_W2.5mm_P5.00mm" H 4388 5550 50  0001 C CNN
 F 3 "~" H 4350 5700 50  0001 C CNN
 	1    4350 5700
 	1    0    0    -1  
@@ -425,13 +425,13 @@ U 1 1 5E4A7F97
 P 4350 5350
 F 0 "C2" H 4200 5250 50  0000 L CNN
 F 1 "4.7uF" H 4050 5350 50  0000 L CNN
-F 2 "Capacitor_THT:C_Disc_D3.0mm_W2.0mm_P2.50mm" H 4388 5200 50  0001 C CNN
+F 2 "Capacitor_THT:C_Disc_D4.7mm_W2.5mm_P5.00mm" H 4388 5200 50  0001 C CNN
 F 3 "~" H 4350 5350 50  0001 C CNN
 	1    4350 5350
 	1    0    0    -1  
 $EndComp
 $Comp
-L StupidDogFocuserPCB-rescue:SN74HC14N-dk_Logic-Gates-and-Inverters U2
+L StupidDogFocuserPCB-rescue:SN74HC14N-dk_Logic-Gates-and-Inverters-StupidDogFocuserPCB-rescue U2
 U 1 1 5E4A594F
 P 2600 5500
 F 0 "U2" H 2600 4797 60  0000 C CNN
@@ -549,7 +549,7 @@ LIM_A
 Wire Wire Line
 	2900 5500 2950 5500
 $Comp
-L StupidDogFocuserPCB-rescue:OSTTC062162-dk_Terminal-Blocks-Wire-to-Board J1
+L StupidDogFocuserPCB-rescue:OSTTC062162-dk_Terminal-Blocks-Wire-to-Board-StupidDogFocuserPCB-rescue J1
 U 1 1 5E624889
 P 8350 2250
 F 0 "J1" V 8119 2233 60  0000 C CNN
@@ -625,7 +625,7 @@ U 1 1 5E63E91D
 P 8450 4100
 F 0 "C6" H 8565 4146 50  0000 L CNN
 F 1 "4.7uF" H 8565 4055 50  0000 L CNN
-F 2 "Capacitor_THT:C_Disc_D3.0mm_W2.0mm_P2.50mm" H 8488 3950 50  0001 C CNN
+F 2 "Capacitor_THT:C_Disc_D4.7mm_W2.5mm_P5.00mm" H 8488 3950 50  0001 C CNN
 F 3 "~" H 8450 4100 50  0001 C CNN
 	1    8450 4100
 	1    0    0    -1  

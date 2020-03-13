@@ -172,11 +172,11 @@ X GND 4 0 -300 100 U 50 50 1 1 W
 ENDDRAW
 ENDDEF
 #
-# StupidDogFocuserPCB-rescue_OSTTC062162-dk_Terminal-Blocks-Wire-to-Board
+# StupidDogFocuserPCB-rescue_OSTTC062162-dk_Terminal-Blocks-Wire-to-Board-StupidDogFocuserPCB-rescue
 #
-DEF StupidDogFocuserPCB-rescue_OSTTC062162-dk_Terminal-Blocks-Wire-to-Board J 0 40 Y Y 1 F N
+DEF StupidDogFocuserPCB-rescue_OSTTC062162-dk_Terminal-Blocks-Wire-to-Board-StupidDogFocuserPCB-rescue J 0 40 Y Y 1 F N
 F0 "J" -100 -50 50 H V R CNN
-F1 "StupidDogFocuserPCB-rescue_OSTTC062162-dk_Terminal-Blocks-Wire-to-Board" 250 -200 50 H V C CNN
+F1 "StupidDogFocuserPCB-rescue_OSTTC062162-dk_Terminal-Blocks-Wire-to-Board-StupidDogFocuserPCB-rescue" 250 -200 50 H V C CNN
 F2 "digikey-footprints:Term_Block_1x6_P5.08mm" 200 200 60 H I L CNN
 F3 "http://www.on-shore.com/wp-content/uploads/OSTTCXX2162.pdf" 200 300 60 H I L CNN
 F4 "ED2613-ND" 200 400 60 H I L CNN "Digi-Key_PN"
@@ -217,11 +217,11 @@ X ~ 6 500 100 100 D 50 50 1 1 P
 ENDDRAW
 ENDDEF
 #
-# StupidDogFocuserPCB-rescue_SN74HC14N-dk_Logic-Gates-and-Inverters
+# StupidDogFocuserPCB-rescue_SN74HC14N-dk_Logic-Gates-and-Inverters-StupidDogFocuserPCB-rescue
 #
-DEF StupidDogFocuserPCB-rescue_SN74HC14N-dk_Logic-Gates-and-Inverters U 0 1 Y Y 1 F N
+DEF StupidDogFocuserPCB-rescue_SN74HC14N-dk_Logic-Gates-and-Inverters-StupidDogFocuserPCB-rescue U 0 1 Y Y 1 F N
 F0 "U" -100 540 60 H V R CNN
-F1 "StupidDogFocuserPCB-rescue_SN74HC14N-dk_Logic-Gates-and-Inverters" 10 -450 60 H V L CNN
+F1 "StupidDogFocuserPCB-rescue_SN74HC14N-dk_Logic-Gates-and-Inverters-StupidDogFocuserPCB-rescue" 10 -450 60 H V L CNN
 F2 "digikey-footprints:DIP-14_W3mm" 200 200 60 H I L CNN
 F3 "http://www.ti.com/general/docs/suppproductinfo.tsp?distId=10&gotoUrl=http%3A%2F%2Fwww.ti.com%2Flit%2Fgpn%2Fsn74hc14" 200 300 60 H I L CNN
 F4 "296-1577-5-ND" 200 400 60 H I L CNN "Digi-Key_PN"
